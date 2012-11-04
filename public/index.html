@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Game-off 2012</title>
+        <link rel="stylesheet" type="text/css" media="screen" href="index.css">
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+        <meta name="apple-mobile-web-app-capable" content="yes">
+        <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    </head>
+    <body>
+        <div id="screen">
+            <span id="framecounter">(0/0 fps)</span>
+            <script type="text/javascript" src="lib/melonJS-0.9.5.js"></script>
+            <script type="text/javascript" src="lib/cp.js"></script>
+            <script type="text/javascript" src="lib/cm.js"></script>
+
+            <script type="text/javascript" src="js/config.js"></script>
+            <script type="text/javascript" src="js/game.js"></script>
+
+            <script type="text/javascript" src="js/entities/rect.js"></script>
+
+            <script type="text/javascript" src="js/objects/screens.js"></script>
+
+            <script type="text/javascript" src="js/resources.js"></script>
+
+            <script type="text/javascript">
+                /* Bootstrap */
+                window.onReady(function onReady() {
+                    game.onload();
+
+                    /* Scroll away mobile GUI */
+                    (function () {
+                        window.scrollTo(0, 1);
+                    }).defer();
+                });
+            </script>
+        </div>
+    </body>
+</html>

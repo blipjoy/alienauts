@@ -3,10 +3,10 @@ var c = {
     "DEBUG"     : false,
 
     "WIDTH"     : function WIDTH() {
-        return window.innerWidth;
+        return window.innerWidth || 640;
     },
     "HEIGHT"    : function HEIGHT() {
-        return window.innerHeight;
+        return window.innerHeight || 480;
     },
 
     "MOBILE"    : navigator.userAgent.match(/Android|iPhone|iPad|iPod/i),

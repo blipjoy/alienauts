@@ -262,7 +262,6 @@ window.cm = (function cm() {
         lastStep = me.timer.getTime();
 
         // Initialize Chipmunk space.
-        space.idleSpeedThreshold = 0.5;
         space.sleepTimeThreshold = 0.5;
 
         // A persistent object that will step the Chipmunk space every frame.
@@ -279,7 +278,7 @@ window.cm = (function cm() {
         });
 
         // Add the Chipmunk space stepper object.
-        me.game.add(new Stepper(), Infinity);
+        me.game.add(new Stepper(), -Infinity);
         me.game.sort();
     });
 

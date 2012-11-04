@@ -24,7 +24,7 @@ game.PlayScreen = me.ScreenObject.extend({
         me.game.add(new game.Rect(40, 45, 15, 15, "green"), 1000);
         me.game.add(new game.Rect(60, 40, 20, 20, "blue"), 1000);
         me.game.add(new game.Rect(20, 60, 25, 15, "lime"), 1000);
-        me.game.add(new game.Rect(35, 20, 15, 25, "gray"), 1000);
+        me.game.add(new game.Rect(35, 20, 15, 25, "purple"), 1000);
         me.game.sort();
 
         // HUD

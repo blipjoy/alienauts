@@ -2,8 +2,12 @@
 var c = {
     "DEBUG"     : false,
 
-    "WIDTH"     : window.innerWidth,
-    "HEIGHT"    : window.innerHeight,
+    "WIDTH"     : function WIDTH() {
+        return window.innerWidth;
+    },
+    "HEIGHT"    : function HEIGHT() {
+        return window.innerHeight;
+    },
 
     "MOBILE"    : navigator.userAgent.match(/Android|iPhone|iPad|iPod/i),
     "GUID"      : (function () {
@@ -34,31 +38,39 @@ if (c.MOBILE) {
 
 window.addEventListener("hashchange", function onHashChange(e) {
     var debug = (document.location.hash === "#debug");
-    c.__defineGetter__("DEBUG", function () {
-        return debug;
-    });
+    try {
+        if (!c.hasOwnProperty("DEBUG")) {
+            c.__defineGetter__("DEBUG", function () {
+                return debug;
+            });
+        }
+    }
+    catch (e) {
+        c.DEBUG = debug;
+    }
 });
 
 // Turn the `c` object into a hash of constants.
-try {
-    Object.keys(c).forEach(function eachKey(key) {
-        if (typeof(c[key]) === "function") {
-            return;
-        }
-
+Object.keys(c).forEach(function eachKey(key) {
+    try {
         c.__defineGetter__(
             key,
-            (function getterFactory(value) {
-                return function returnValue() {
-                    return value
-                };
-            })(c[key])
+            (typeof(c[key]) === "function") ?
+                c[key] :
+                (function getterFactory(value) {
+                    return function returnValue() {
+                        return value
+                    };
+                })(c[key])
         );
-    });
-}
-catch (e) {
-    // No getters? FAKE CONSTANTS!
-}
+    }
+    catch (e) {
+        // No getters? FAKE CONSTANTS!
+        if (typeof(c[key]) === "function") {
+            c[key] = c[key]();
+        }
+    }
+});
 
 
 // Game engine settings.

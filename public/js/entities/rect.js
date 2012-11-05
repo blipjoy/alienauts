@@ -1,5 +1,5 @@
 game.Rect = me.Rect.extend({
-    "init" : function init(x, y, w, h, c) {
+    "init" : function init(x, y, w, h, c, m) {
         var space = cm.getSpace();
 
         this.parent(new me.Vector2d(x - (w / 2), y - (h / 2)), w, h);
@@ -7,7 +7,9 @@ game.Rect = me.Rect.extend({
 
         this.color = c;
 
-        this.body = new cp.Body(1, cp.momentForBox(1, w, h));
+        m = m || 1;
+
+        this.body = new cp.Body(m, cp.momentForBox(m, w, h));
         var shape = space.addShape(new cp.BoxShape(this.body, w, h));
         shape.setElasticity(0.3);
         shape.setFriction(0.5);

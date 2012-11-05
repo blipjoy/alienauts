@@ -1,5 +1,5 @@
 game.Circle = me.Rect.extend({
-    "init" : function init(x, y, r, c) {
+    "init" : function init(x, y, r, c, isBalloon) {
         var space = cm.getSpace();
 
         this.parent(new me.Vector2d(x - r, y - r), r, r);
@@ -13,10 +13,12 @@ game.Circle = me.Rect.extend({
         shape.setElasticity(0.3);
         shape.setFriction(0.5);
 
-        var vf = b.velocity_func;
-        var tg = cp.v(0, 550);
-        b.velocity_func = function velocity_func(g, d, dt) {
-            vf.bind(b)(tg, d, dt);
+        if (isBalloon) {
+            var vf = b.velocity_func;
+            var tg = cp.v(0, 550);
+            b.velocity_func = function velocity_func(g, d, dt) {
+                vf.bind(b)(tg, d, dt);
+            }
         }
 
         b.p = cp.v(x, me.video.getHeight() - y);

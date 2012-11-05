@@ -1,14 +1,15 @@
-game.Rect = me.Rect.extend({
-    "init" : function init(x, y, w, h, c) {
+game.Circle = me.Rect.extend({
+    "init" : function init(x, y, r, c) {
         var space = cm.getSpace();
 
-        this.parent(new me.Vector2d(x - (w / 2), y - (h / 2)), w, h);
+        this.parent(new me.Vector2d(x - r, y - r), r, r);
         this.visible = true;
 
+        this.r = r;
         this.color = c;
 
-        this.body = new cp.Body(1, cp.momentForBox(1, w, h));
-        var shape = space.addShape(new cp.BoxShape(this.body, w, h));
+        this.body = new cp.Body(1, cp.momentForCircle(1, 0, r, cp.vzero));
+        var shape = space.addShape(new cp.CircleShape(this.body, r, cp.vzero));
         shape.setElasticity(0.3);
         shape.setFriction(0.5);
 
@@ -29,22 +30,23 @@ game.Rect = me.Rect.extend({
 
     "draw" : function draw(context) {
         var b = this.body,
-            p = b.p,
-            w = this.width,
-            h = this.height,
-            hw = -w / 2,
-            hh = -h / 2;
+            p = b.p;
 
         context.save();
 
         context.translate(p.x, me.video.getHeight() - p.y);
         context.rotate(-b.a);
 
+        context.beginPath();
+        context.moveTo(0, 0);
+        context.lineTo(this.r, 0);
+        context.arc(0, 0, this.r, 0, Math.PI * 2);
+
         context.fillStyle = b.isSleeping() ? "gray" : this.color;
-        context.fillRect(hw, hh, w, h);
+        context.fill();
 
         context.strokeStyle = "black";
-        context.strokeRect(hw, hh, w, h);
+        context.stroke();
 
         context.restore();
     }

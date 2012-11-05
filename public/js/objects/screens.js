@@ -20,11 +20,12 @@ game.PlayScreen = me.ScreenObject.extend({
         slope.setElasticity(1);
         slope.setFriction(1);
 
-        me.game.add(new game.Rect(50, 70, 15, 15, "red"), 1000);
-        me.game.add(new game.Rect(40, 45, 15, 15, "green"), 1000);
-        me.game.add(new game.Rect(60, 40, 20, 20, "blue"), 1000);
+        me.game.add(new game.Rect(50, 90, 15, 15, "red"), 1000);
+        me.game.add(new game.Circle(45, 45, 10, "green"), 1000);
+        me.game.add(new game.Rect(70, 40, 20, 20, "blue"), 1000);
         me.game.add(new game.Rect(20, 60, 25, 15, "lime"), 1000);
         me.game.add(new game.Rect(35, 20, 15, 25, "purple"), 1000);
+        me.game.add(new game.Circle(15, 90, 15, "orange"), 1000);
         me.game.sort();
 
         // HUD
@@ -40,7 +41,8 @@ game.PlayScreen = me.ScreenObject.extend({
         // ...
     },
 
+    // FIXME: Don't clear the BG here
     "draw" : function draw(context) {
-        me.video.clearSurface(context, "black");
+        me.video.clearSurface(context, "#ccc");
     }
 });

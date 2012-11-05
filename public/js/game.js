@@ -76,6 +76,7 @@ var game = {
         //me.state.set(me.state.MENU, new game.SelectScreen());
 
         // Set the "Play" ScreenObject.
+        // FIXME: Don't create PlayScreen as an object
         me.state.set(me.state.PLAY, new game.PlayScreen(true));
 
         // Entities.

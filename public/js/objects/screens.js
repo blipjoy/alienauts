@@ -20,12 +20,21 @@ game.PlayScreen = me.ScreenObject.extend({
         slope.setElasticity(1);
         slope.setFriction(1);
 
-        me.game.add(new game.Rect(50, 90, 15, 15, "red"), 1000);
-        me.game.add(new game.Circle(45, 45, 10, "green"), 1000);
-        me.game.add(new game.Rect(70, 40, 20, 20, "blue"), 1000);
-        me.game.add(new game.Rect(20, 60, 25, 15, "lime"), 1000);
-        me.game.add(new game.Rect(35, 20, 15, 25, "purple"), 1000);
-        me.game.add(new game.Circle(15, 90, 15, "orange"), 1000);
+        var c, r;
+        c = new game.Circle(50, 100, 10, "green");
+        r = new game.Rect(50, 150, 15, 15, "red");
+        me.game.add(c, 1000);
+        me.game.add(r, 1000);
+        space.addConstraint(new cp.PinJoint(c.body, r.body, cp.vzero, cp.vzero));
+
+        c = new game.Circle(25, 100, 15, "orange");
+        r = new game.Rect(25, 150, 20, 20, "blue");
+        me.game.add(c, 1000);
+        me.game.add(r, 1000);
+        space.addConstraint(new cp.PinJoint(c.body, r.body, cp.vzero, cp.vzero));
+
+        me.game.add(new game.Rect(50, 20, 25, 15, "lime"), 1000);
+        me.game.add(new game.Rect(25, 20, 15, 25, "purple"), 1000);
         me.game.sort();
 
         // HUD

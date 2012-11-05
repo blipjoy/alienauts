@@ -8,13 +8,19 @@ game.Circle = me.Rect.extend({
         this.r = r;
         this.color = c;
 
-        this.body = new cp.Body(1, cp.momentForCircle(1, 0, r, cp.vzero));
-        var shape = space.addShape(new cp.CircleShape(this.body, r, cp.vzero));
+        var b = this.body = new cp.Body(1, cp.momentForCircle(1, 0, r, cp.vzero));
+        var shape = space.addShape(new cp.CircleShape(b, r, cp.vzero));
         shape.setElasticity(0.3);
         shape.setFriction(0.5);
 
-        this.body.p = cp.v(x, me.video.getHeight() - y);
-        space.addBody(this.body);
+        var vf = b.velocity_func;
+        var tg = cp.v(0, 550);
+        b.velocity_func = function velocity_func(g, d, dt) {
+            vf.bind(b)(tg, d, dt);
+        }
+
+        b.p = cp.v(x, me.video.getHeight() - y);
+        space.addBody(b);
     },
 
     "update" : function update() {

@@ -1,8 +1,9 @@
 game.Circle = me.Rect.extend({
     "init" : function init(x, y, r, c, isBalloon) {
         var space = cm.getSpace();
+        var r2 = r * 2;
 
-        this.parent(new me.Vector2d(x - r, y - r), r, r);
+        this.parent(new me.Vector2d(x - r, y - r), r2, r2);
         this.visible = true;
 
         this.r = r;
@@ -30,8 +31,8 @@ game.Circle = me.Rect.extend({
             p = b.p,
             pos = this.pos;
 
-        pos.x = p.x;
-        pos.y = p.y;
+        pos.x = p.x - this.r;
+        pos.y = me.video.getHeight() - p.y - this.r;
 
         return ((b.vx != 0) || (b.vy != 0));
     },

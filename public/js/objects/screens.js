@@ -1,5 +1,5 @@
 game.PlayScreen = me.ScreenObject.extend({
-    "onResetEvent" : function() {
+    "onResetEvent" : function onResetEvent() {
         // Create a floor
         var space = cm.getSpace();
         var floor = space.addShape(new cp.SegmentShape(
@@ -62,7 +62,7 @@ game.PlayScreen = me.ScreenObject.extend({
         */
     },
 
-    "onDestroyEvent" : function() {
+    "onDestroyEvent" : function onDestroyEvent() {
         // ...
     },
 

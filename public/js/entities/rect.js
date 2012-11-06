@@ -23,8 +23,8 @@ game.Rect = me.Rect.extend({
             p = b.p,
             pos = this.pos;
 
-        pos.x = p.x;
-        pos.y = p.y;
+        pos.x = p.x - b.hw;
+        pos.y = me.video.getHeight() - p.y - b.hw;
 
         return ((b.vx != 0) || (b.vy != 0));
     },

@@ -1,5 +1,5 @@
 game.Circle = me.Rect.extend({
-    "init" : function init(x, y, r, c, isBalloon) {
+    "init" : function init(x, y, r, color, isBalloon) {
         var space = cm.getSpace();
         var r2 = r * 2;
 
@@ -7,16 +7,17 @@ game.Circle = me.Rect.extend({
         this.visible = true;
 
         this.r = r;
-        this.color = c;
+        this.color = color;
 
         var b = this.body = new cp.Body(1, cp.momentForCircle(1, 0, r, cp.vzero));
         var shape = space.addShape(new cp.CircleShape(b, r, cp.vzero));
         shape.setElasticity(0.3);
         shape.setFriction(0.5);
+        shape.setLayers(c.LAYER_SHAPES);
 
         if (isBalloon) {
             var vf = b.velocity_func;
-            var tg = cp.v(0, 550);
+            var tg = cp.v(0, 600);
             b.velocity_func = function velocity_func(g, d, dt) {
                 vf.bind(b)(tg, d, dt);
             }

@@ -1,16 +1,24 @@
 /* Constants */
 var c = {
-    "DEBUG"     : false,
+    "DEBUG"             : false,
 
-    "WIDTH"     : function WIDTH() {
+    "WIDTH"             : function WIDTH() {
         return window.innerWidth || 640;
     },
-    "HEIGHT"    : function HEIGHT() {
+    "HEIGHT"            : function HEIGHT() {
         return window.innerHeight || 480;
     },
 
-    "MOBILE"    : navigator.userAgent.match(/Android|iPhone|iPad|iPod/i),
-    "GUID"      : (function () {
+    // Chipmunk shape layers
+    "LAYER_NONE"        : 0x00000000,
+    "LAYER_SHAPES"      : 0x00000001,
+    "LAYER_ROPES"       : 0x00000002,
+
+    // Chipmunk collision groups
+    "GROUP_ROPE_CP"     : 1, // Rope control points
+
+    "MOBILE"            : navigator.userAgent.match(/Android|iPhone|iPad|iPod/i),
+    "GUID"              : (function () {
         function S4() {
             return ("000" + Math.floor(Math.random() * 0x10000).toString(16)).slice(-4);
         };

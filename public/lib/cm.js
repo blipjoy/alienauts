@@ -91,6 +91,13 @@ window.cm = (function cm() {
         return addShape(new cp.PolyShape(space.staticBody, verts, cp.vzero));
     }
 
+    function createStaticBody() {
+        var body = new cp.Body(Infinity, Infinity);
+        body.nodeIdleTime = Infinity;
+
+        return body;
+    }
+
     // Remove body and associated shapes.
     function remove(body) {
         var shapes = [];
@@ -394,6 +401,10 @@ window.cm = (function cm() {
 
         "staticBox" : function _staticBox(x, y, w, h) {
             return staticBox(x, y, w, h);
+        },
+
+        "createStaticBody" : function _createStaticBody() {
+            return createStaticBody();
         },
 
         "remove" : function _remove(body) {

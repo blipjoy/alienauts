@@ -1,11 +1,11 @@
 game.Rect = me.Rect.extend({
-    "init" : function init(x, y, w, h, c, m) {
+    "init" : function init(x, y, w, h, color, m) {
         var space = cm.getSpace();
 
         this.parent(new me.Vector2d(x - (w / 2), y - (h / 2)), w, h);
         this.visible = true;
 
-        this.color = c;
+        this.color = color;
 
         m = m || 1;
 
@@ -13,6 +13,7 @@ game.Rect = me.Rect.extend({
         var shape = space.addShape(new cp.BoxShape(this.body, w, h));
         shape.setElasticity(0.3);
         shape.setFriction(0.5);
+        shape.setLayers(c.LAYER_SHAPES);
 
         this.body.p = cp.v(x, me.video.getHeight() - y);
         space.addBody(this.body);

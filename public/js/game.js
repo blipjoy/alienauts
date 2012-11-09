@@ -83,6 +83,11 @@ var game = {
         //me.entityPool.add("truck", game.Truck);
         //me.entityPool.add("plant", game.Plant);
 
+        me.input.bindKey(me.input.KEY.LEFT, "left");
+        me.input.bindKey(me.input.KEY.RIGHT, "right");
+        me.input.bindKey(me.input.KEY.A, "left");
+        me.input.bindKey(me.input.KEY.D, "right");
+
         // Start the game.
         me.state.change(me.state.PLAY);
     },

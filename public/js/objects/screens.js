@@ -22,6 +22,9 @@ game.PlayScreen = me.ScreenObject.extend({
 
         var circle, rect;
 
+        // Create player entity.
+        me.game.add(new game.Player(116, c.HEIGHT - 32), 1000);
+
         // Create a small red square attached to a small green balloon.
         circle = new game.Circle(50, 100, 10, "green", true);
         rect = new game.Rect(50, 150, 15, 15, "red");

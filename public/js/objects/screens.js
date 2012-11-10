@@ -1,5 +1,7 @@
 game.PlayScreen = me.ScreenObject.extend({
     "onResetEvent" : function onResetEvent() {
+        var vp = me.game.viewport;
+
         // Create a floor
         var space = cm.getSpace();
         var floor = space.addShape(new cp.SegmentShape(
@@ -23,7 +25,18 @@ game.PlayScreen = me.ScreenObject.extend({
         var circle, rect;
 
         // Create player entity.
-        me.game.add(new game.Player(116, c.HEIGHT - 32), 1000);
+        game.player = new game.Player(116, c.HEIGHT - 32);
+        me.game.add(game.player, 1000);
+
+        // Bind input
+        me.input.bindKey(me.input.KEY.LEFT, "left");
+        me.input.bindKey(me.input.KEY.RIGHT, "right");
+        me.input.bindKey(me.input.KEY.A, "left");
+        me.input.bindKey(me.input.KEY.D, "right");
+        me.input.registerMouseEvent("mousedown", vp, game.player.touch.bind(game.player), true);
+        me.input.registerMouseEvent("mouseup", vp, game.player.touchEnd.bind(game.player), true);
+        me.input.registerMouseEvent("touchstart", vp, game.player.touch.bind(game.player), true);
+        me.input.registerMouseEvent("touchend", vp, game.player.touchEnd.bind(game.player), true);
 
         // Create a small red square attached to a small green balloon.
         circle = new game.Circle(50, 100, 10, "green", true);
@@ -70,7 +83,17 @@ game.PlayScreen = me.ScreenObject.extend({
     },
 
     "onDestroyEvent" : function onDestroyEvent() {
-        // ...
+        var vp = me.game.viewport;
+
+        // Unbind input
+        me.input.unbindKey(me.input.KEY.LEFT);
+        me.input.unbindKey(me.input.KEY.RIGHT);
+        me.input.unbindKey(me.input.KEY.A);
+        me.input.unbindKey(me.input.KEY.D);
+        me.input.releaseMouseEvent("mousedown", vp);
+        me.input.releaseMouseEvent("mouseup", vp);
+        me.input.releaseMouseEvent("touchstart", vp);
+        me.input.releaseMouseEvent("touchend", vp);
     },
 
     // FIXME: Don't clear the BG here

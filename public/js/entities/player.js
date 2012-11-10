@@ -18,30 +18,65 @@ game.Player = me.Rect.extend({
 
         this.body.p = cp.v(x, me.video.getHeight() - y);
         space.addBody(this.body);
+
+        this.lastPressed = [ false, false ];
     },
 
     "update" : function update() {
         var b = this.body,
             p = b.p,
-            pos = this.pos;
+            pos = this.pos,
+            pressed = [
+                me.input.isKeyPressed("left"),
+                me.input.isKeyPressed("right")
+            ];
 
         pos.x = p.x - b.hw;
         pos.y = me.video.getHeight() - p.y - b.hw;
 
-        var shape = this.body.shapeList[0];
-        if (me.input.isKeyPressed("right")) {
-            b.activate();
-            shape.surface_v = cp.v(200, 0);
+        if (pressed[0] && !this.lastPressed[0]) {
+            this.move(-200);
         }
-        else if (me.input.isKeyPressed("left")) {
-            b.activate();
-            shape.surface_v = cp.v(-200, 0);
+        else if (pressed[1] && !this.lastPressed[1]) {
+            this.move(200);
         }
-        else {
-            shape.surface_v = cp.vzero;
+        else if ((!pressed[0] && this.lastPressed[0]) || (!pressed[1] && this.lastPressed[1])) {
+            this.move(0);
         }
 
+        this.lastPressed = pressed;
+
         return ((b.vx != 0) || (b.vy != 0));
+    },
+
+    "touch" : function touch(e) {
+        var vp = me.game.viewport,
+            touch = me.input.touches[0];
+
+        if (touch.x >= vp.width * 0.75) {
+            // Right
+            this.move(200);
+        }
+        else if (touch.x < vp.width * 0.25) {
+            // Left
+            this.move(-200);
+        }
+    },
+
+    "touchEnd" : function touchEnd(e) {
+        this.move(0);
+    },
+
+    "move" : function move(velocity) {
+        var b = this.body;
+
+        if (velocity) {
+            b.activate();
+            b.shapeList[0].surface_v = cp.v(velocity, 0);
+        }
+        else {
+            b.shapeList[0].surface_v = cp.vzero;
+        }
     },
 
     "draw" : function draw(context) {
@@ -54,6 +89,7 @@ game.Player = me.Rect.extend({
 
         context.save();
 
+        // FIXME: We probably shouldn't worry about rotation.
         context.translate(p.x, me.video.getHeight() - p.y);
         context.rotate(-b.a);
 

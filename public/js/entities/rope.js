@@ -13,23 +13,23 @@ game.Rope = Object.extend({
         }
 
         function createControlPoint(endpoint, anchor, p, l) {
-            var b = new cp.Body(m, Infinity);
-            b.p.x = p.x;
-            b.p.y = p.y;
+            var body = new cp.Body(m, Infinity);
+            body.p.x = p.x;
+            body.p.y = p.y;
 
             // Default control radius is 3
-            var shape = space.addShape(new cp.CircleShape(b, 3, cp.vzero));
+            var shape = space.addShape(new cp.CircleShape(body, 3, cp.vzero));
             shape.setElasticity(0);
             shape.setFriction(0.5);
             shape.setLayers(c.LAYER_ROPES);
-            shape.group = c.GROUP_ROPE_CP;
+            shape.group = c.GROUP_ROPE;
 
-            space.addBody(b);
+            space.addBody(body);
 
             // The control point is attached to its endpoint via a slide joint.
-            space.addConstraint(new cp.SlideJoint(endpoint, b, anchor, cp.vzero, 0, l));
+            space.addConstraint(new cp.SlideJoint(endpoint, body, anchor, cp.vzero, 0, l));
 
-            return b;
+            return body;
         }
 
         // FIXME: Determine proper segment length for control point.

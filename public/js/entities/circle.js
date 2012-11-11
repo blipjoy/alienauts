@@ -1,5 +1,16 @@
 game.Circle = me.Rect.extend({
-    "init" : function init(x, y, r, color, isBalloon) {
+    "init" : function init(x, y, r, settings) {
+        settings = settings || {};
+
+        // Default settings
+        settings.color = settings.color || "#"
+            + game.toHex(Math.floor(Math.random() * 256))
+            + game.toHex(Math.floor(Math.random() * 256))
+            + game.toHex(Math.floor(Math.random() * 256));
+        settings.mass = settings.mass || 1;
+        settings.group = settings.group || 0;
+        settings.isBalloon = settings.isBalloon || false;
+
         var space = cm.getSpace();
         var r2 = r * 2;
 
@@ -7,15 +18,17 @@ game.Circle = me.Rect.extend({
         this.visible = true;
 
         this.r = r;
-        this.color = color;
+        this.color = settings.color;
 
-        var b = this.body = new cp.Body(1, cp.momentForCircle(1, 0, r, cp.vzero));
+        var b = this.body = new cp.Body(settings.mass, cp.momentForCircle(settings.mass, 0, r, cp.vzero));
         var shape = space.addShape(new cp.CircleShape(b, r, cp.vzero));
         shape.setElasticity(0.3);
         shape.setFriction(0.5);
         shape.setLayers(c.LAYER_SHAPES);
+        shape.group = settings.group;
 
-        if (isBalloon) {
+        // FIXME
+        if (settings.isBalloon) {
             var vf = b.velocity_func;
             var tg = cp.v(0, 600);
             b.velocity_func = function velocity_func(g, d, dt) {

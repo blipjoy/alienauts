@@ -1,22 +1,31 @@
 game.Rect = me.Rect.extend({
-    "init" : function init(x, y, w, h, color, m) {
+    "init" : function init(x, y, w, h, settings) {
+        settings = settings || {};
+
+        // Default settings
+        settings.color = settings.color || "#"
+            + game.toHex(Math.floor(Math.random() * 256))
+            + game.toHex(Math.floor(Math.random() * 256))
+            + game.toHex(Math.floor(Math.random() * 256));
+        settings.mass = settings.mass || 1;
+        settings.group = settings.group || 0;
+
         var space = cm.getSpace();
 
         this.parent(new me.Vector2d(x - (w / 2), y - (h / 2)), w, h);
         this.visible = true;
 
-        this.color = color;
+        this.color = settings.color;
 
-        m = m || 1;
-
-        this.body = new cp.Body(m, cp.momentForBox(m, w, h));
-        var shape = space.addShape(new cp.BoxShape(this.body, w, h));
+        var b = this.body = new cp.Body(settings.mass, cp.momentForBox(settings.mass, w, h));
+        var shape = space.addShape(new cp.BoxShape(b, w, h));
         shape.setElasticity(0.3);
         shape.setFriction(0.5);
         shape.setLayers(c.LAYER_SHAPES);
+        shape.group = settings.group;
 
-        this.body.p = cp.v(x, me.video.getHeight() - y);
-        space.addBody(this.body);
+        b.p = cp.v(x, me.video.getHeight() - y);
+        space.addBody(b);
     },
 
     "update" : function update() {

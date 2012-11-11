@@ -15,7 +15,8 @@ var c = {
     "LAYER_ROPES"       : 0x00000002,
 
     // Chipmunk collision groups
-    "GROUP_ROPE_CP"     : 1, // Rope control points
+    "GROUP_ROPE"        : 1, // Rope control points
+    "GROUP_CHAIN"       : 2, // Chain segments
 
     "MOBILE"            : navigator.userAgent.match(/Android|iPhone|iPad|iPod/i),
     "GUID"              : (function () {

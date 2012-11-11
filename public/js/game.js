@@ -95,5 +95,10 @@ var game = {
         catch (e) {
             return false;
         }
+    },
+
+    // Helper function to generate a hex string
+    "toHex" : function toHex(num, pad) {
+        return ("0000000000000000" + num.toString(16)).substr(-(pad || 2));
     }
 };

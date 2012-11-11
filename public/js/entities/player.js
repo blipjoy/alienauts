@@ -72,11 +72,8 @@ game.Player = me.Rect.extend({
 
         if (velocity) {
             b.activate();
-            b.shapeList[0].surface_v = cp.v(velocity, 0);
         }
-        else {
-            b.shapeList[0].surface_v = cp.vzero;
-        }
+        b.shapeList[0].surface_v = cp.v(velocity, 0);
     },
 
     "draw" : function draw(context) {

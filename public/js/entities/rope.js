@@ -7,11 +7,6 @@ game.Rope = Object.extend({
         this.a1 = anchor1;
         this.a2 = anchor2;
 
-        // Return the number exactly halfway between min and max.
-        function midpoint(min, max) {
-            return (min + max) / 2;
-        }
-
         function createControlPoint(endpoint, anchor, p, l) {
             var body = new cp.Body(m, Infinity);
             body.p.x = p.x;
@@ -37,8 +32,8 @@ game.Rope = Object.extend({
 
         // Calculate midpoint between both endpoints.
         var mid = cp.v(
-            midpoint(body1.p.x, body2.p.x),
-            midpoint(body1.p.y, body2.p.y)
+            game.midpoint(body1.p.x, body2.p.x),
+            game.midpoint(body1.p.y, body2.p.y)
         );
 
         // Create two control points

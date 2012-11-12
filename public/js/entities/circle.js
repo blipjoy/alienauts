@@ -10,6 +10,8 @@ game.Circle = me.Rect.extend({
         settings.mass = settings.mass || 1;
         settings.group = settings.group || 0;
         settings.isBalloon = settings.isBalloon || false;
+        settings.elasticity = settings.elasticity || 0.3;
+        settings.friction = settings.friction || 0.5;
 
         var space = cm.getSpace();
         var r2 = r * 2;
@@ -22,8 +24,8 @@ game.Circle = me.Rect.extend({
 
         var b = this.body = new cp.Body(settings.mass, cp.momentForCircle(settings.mass, 0, r, cp.vzero));
         var shape = space.addShape(new cp.CircleShape(b, r, cp.vzero));
-        shape.setElasticity(0.3);
-        shape.setFriction(0.5);
+        shape.setElasticity(settings.elasticity);
+        shape.setFriction(settings.friction);
         shape.setLayers(c.LAYER_SHAPES);
         shape.group = settings.group;
 

@@ -9,6 +9,8 @@ game.Rect = me.Rect.extend({
             + game.toHex(Math.floor(Math.random() * 256));
         settings.mass = settings.mass || 1;
         settings.group = settings.group || 0;
+        settings.elasticity = settings.elasticity || 0.3;
+        settings.friction = settings.friction || 0.5;
 
         var space = cm.getSpace();
 
@@ -19,8 +21,8 @@ game.Rect = me.Rect.extend({
 
         var b = this.body = new cp.Body(settings.mass, cp.momentForBox(settings.mass, w, h));
         var shape = space.addShape(new cp.BoxShape(b, w, h));
-        shape.setElasticity(0.3);
-        shape.setFriction(0.5);
+        shape.setElasticity(settings.elasticity);
+        shape.setFriction(settings.friction);
         shape.setLayers(c.LAYER_SHAPES);
         shape.group = settings.group;
 

@@ -12,6 +12,8 @@ game.Chain = Object.extend({
             + game.toHex(Math.floor(Math.random() * 256));
         settings.mass = settings.mass || 1;
         settings.group = c.GROUP_CHAIN;
+        settings.elasticity = settings.elasticity || 0;
+        settings.friction = settings.friction || 0.5;
 
         var space = cm.getSpace();
 
@@ -41,14 +43,16 @@ game.Chain = Object.extend({
         // Create segments between each point
         var neighbor = body1,
             anchor = anchor1,
-            last_point = cp.v.add(body1.p, anchor1);
+            last_point = cp.v.add(body1.p, anchor1),
+            pos = null,
+            segment = null;
 
         points.push(cp.v.add(body2.p, anchor2));
         points.forEach(function (point) {
             var len = cp.v.dist(last_point, point) / w;
             for (var i = 1; i < len; i++) {
-                var pos = cp.v.lerpconst(last_point, point, i * w);
-                var segment = createSegment(pos.x, c.HEIGHT - pos.y, neighbor, anchor);
+                pos = cp.v.lerpconst(last_point, point, i * w);
+                segment = createSegment(pos.x, c.HEIGHT - pos.y, neighbor, anchor);
                 self.segments.push(segment);
 
                 neighbor = segment.body;

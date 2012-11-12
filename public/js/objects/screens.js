@@ -1,26 +1,31 @@
 game.PlayScreen = me.ScreenObject.extend({
     "onResetEvent" : function onResetEvent() {
         var vp = me.game.viewport;
+        var space = cm.getSpace();
 
         // Create a floor
-        var space = cm.getSpace();
-        var floor = space.addShape(new cp.SegmentShape(
-            space.staticBody,
+        me.game.add(new game.Line(
             cp.v(0, 0),
             cp.v(me.video.getWidth(), 0),
-            0
-        ));
-        floor.setElasticity(1);
-        floor.setFriction(1);
+            3,
+            {
+                "elasticity" : 1,
+                "friction" : 1,
+                "color" : "black"
+            }
+        ), 1000);
 
-        var slope = space.addShape(new cp.SegmentShape(
-            space.staticBody,
+        // Create a slope
+        me.game.add(new game.Line(
             cp.v(0, 100),
             cp.v(100, 0),
-            0
-        ));
-        slope.setElasticity(1);
-        slope.setFriction(1);
+            3,
+            {
+                "elasticity" : 1,
+                "friction" : 1,
+                "color" : "black"
+            }
+        ), 1000);
 
         var circle, rect;
 

@@ -110,11 +110,11 @@ var me = me || {};
 
 		/**
 		 * Global scaling factor(default 1.0)
-		 * @type {int}
+		 * @type {me.Vector2d}
 		 * @memberOf me.sys
 		 */
-		scale : 1.0,
-
+		scale : null, //initialized by me.video.init
+ 	
 		/**
 		 * Global gravity settings <br>
 		 * will override entities init value if defined<br>
@@ -809,39 +809,14 @@ var me = me || {};
 		if (me_initialized)
 			return;
 
-		// init some audio variables
-		var a = document.createElement('audio');
-
 		// enable/disable the cache
 		me.utils.setNocache(document.location.href.match(/\?nocache/)||false);
-
-		if (a.canPlayType) {
-			me.audio.capabilities.mp3 = ("no" != a.canPlayType("audio/mpeg"))
-					&& ("" != a.canPlayType("audio/mpeg"));
-
-			me.audio.capabilities.ogg = ("no" != a.canPlayType('audio/ogg; codecs="vorbis"'))
-					&& ("" != a.canPlayType('audio/ogg; codecs="vorbis"'));
-
-			me.audio.capabilities.wav = ("no" != a.canPlayType('audio/wav; codecs="1"'))
-					&& ("" != a.canPlayType('audio/wav; codecs="1"'));
-
-			// enable sound if any of the audio format is supported
-			me.sys.sound = me.audio.capabilities.mp3 ||
-                        me.audio.capabilities.ogg ||
-                        me.audio.capabilities.wav;
-
-		}
-		// hack, check for specific platform
-		if ((me.sys.ua.search("iphone") > -1)
-				|| (me.sys.ua.search("ipod") > -1)
-				|| (me.sys.ua.search("ipad") > -1)
-				|| (me.sys.ua.search("android") > -1)) {
-			//if on mobile device, disable sound for now
-			me.sys.sound = false;
-		}
-
+	
+		// detect audio capabilities
+		me.audio.detectCapabilities();
+		
 		// detect touch capabilities
-		me.sys.touch = ('createTouch' in document) || ('ontouchstart' in $);
+		me.sys.touch = ('createTouch' in document) || ('ontouchstart' in $) || (navigator.isCocoonJS);
 
 		// init the FPS counter if needed
 		me.timer.init();
@@ -1353,11 +1328,11 @@ var me = me || {};
 		};
 
 		/**
-		 * returns the amount of existing entities<br>
-		 * @name me.game#getEntityCount
+		 * returns the amount of existing objects<br>
+		 * @name me.game#getObjectCount
 		 * @protected
 		 * @function
-		 * @return {Number} the amount of object entities
+		 * @return {Number} the amount of object
 		 */
 		api.getObjectCount = function()
 		{
@@ -1365,11 +1340,11 @@ var me = me || {};
 		};
 
 		/**
-		 * returns the amount of object being draw per frame<br>
-		 * @name me.game#getEntityCount
+		 * returns the amount of object being drawn per frame<br>
+		 * @name me.game#getDrawCount
 		 * @protected
 		 * @function
-		 * @return {Number} the amount of object entities
+		 * @return {Number} the amount of object draws
 		 */
 		api.getDrawCount = function()
 		{
@@ -1611,22 +1586,26 @@ var me = me || {};
 		 * }
 
 		 */
-		api.collide = function(objB) {
-			var result = null;
-
+		api.collide = function(objA) {
+			var res = null;
 			// this should be replace by a list of the 4 adjacent cell around the object requesting collision
 			for ( var i = gameObjects.length, obj; i--, obj = gameObjects[i];)//for (var i = objlist.length; i-- ;)
 			{
-				if (obj.visible && obj.collidable && obj.isEntity && (obj!=objB))
+				if (obj.inViewport && obj.visible && obj.collidable && obj.isEntity && (obj!=objA))
 				{
-					// if return value != null, we have a collision
-					if (result = obj.checkCollision(objB))
-						// stop the loop return the value
-						break;
+					res = obj.collisionBox.collideVsAABB.call(obj, objA);
+					if (res.x != 0 || res.y != 0) {
+						// notify the object
+						obj.onCollision.call(obj, res, objA);
+						// return the type (deprecated)
+						res.type = obj.type;
+						// return a reference of the colliding object
+						res.obj  = obj;
+						return res;
+					}
 				}
 			}
-			return result;
-
+			return null;
 		};
 
 		/**
@@ -1745,17 +1724,17 @@ var me = me || {};
 	 *       // draw our text somewhere in the middle
 	 *       this.logo.draw(context,
 	 *                      "awesome loading screen",
-	 *                      ((context.canvas.width - logo_width) / 2),
-	 *                      (context.canvas.height + 60) / 2);
+	 *                      ((me.video.getWidth() - logo_width) / 2),
+	 *                      (me.video.getHeight() + 60) / 2);
 	 *
 	 *       // display a progressive loading bar
-	 *       var width = Math.floor(this.loadPercent * context.canvas.width);
+	 *       var width = Math.floor(this.loadPercent * me.video.getWidth());
 	 *
 	 *       // draw the progress bar
 	 *       context.strokeStyle = "silver";
-	 *       context.strokeRect(0, (context.canvas.height / 2) + 40, context.canvas.width, 6);
+	 *       context.strokeRect(0, (me.video.getHeight() / 2) + 40, me.video.getWidth(), 6);
 	 *       context.fillStyle = "#89b002";
-	 *       context.fillRect(2, (context.canvas.height / 2) + 42, width-4, 2);
+	 *       context.fillRect(2, (me.video.getHeight() / 2) + 42, width-4, 2);
 	 *    },
 	 * });
 	 *
@@ -2458,8 +2437,8 @@ var me = me || {};
 			
 			// measure the logo size
 			var logo1_width = this.logo1.measureText(context, "melon").width;
-			var xpos = (context.canvas.width - logo1_width - this.logo2.measureText(context, "JS").width) / 2;
-			var ypos = context.canvas.height / 2;
+			var xpos = (me.video.getWidth() - logo1_width - this.logo2.measureText(context, "JS").width) / 2;
+			var ypos = me.video.getHeight() / 2;
 				
 			// clear surface
 			me.video.clearSurface(context, "black");
@@ -2472,11 +2451,11 @@ var me = me || {};
 			ypos += this.logo1.measureText(context, "melon").height / 2;
 
 			// display a progressive loading bar
-			var progress = Math.floor(this.loadPercent * context.canvas.width);
+			var progress = Math.floor(this.loadPercent * me.video.getWidth());
 
 			// draw the progress bar
 			context.strokeStyle = "silver";
-			context.strokeRect(0, ypos, context.canvas.width, 6);
+			context.strokeRect(0, ypos, me.video.getWidth(), 6);
 			context.fillStyle = "#89b002";
 			context.fillRect(2, ypos + 2, progress - 4, 2);
 		}
@@ -2577,33 +2556,38 @@ var me = me || {};
 		 * @private
 		 */
 		function preloadXML(xmlData, onload, onerror) {
-			if ($.XMLHttpRequest) {
-				// code for IE7+, Firefox, Chrome, Opera, Safari
-				var xmlhttp = new XMLHttpRequest();
-				// to ensure our document is treated as a XML file
-				if (xmlhttp.overrideMimeType)
-					xmlhttp.overrideMimeType('text/xml');
-			} else {
-				// code for IE6, IE5
-				var xmlhttp = new ActiveXObject("Microsoft.XMLHTTP");
-				// I actually don't give a **** about IE5/IE6...
-			}
-			// load our XML
-			xmlhttp.open("GET", xmlData.src + me.nocache, false);
-			xmlhttp.onerror = onerror;
-			xmlhttp.onload = function(event) {
-				// set the xmldoc in the array
-				xmlList[xmlData.name] = {
-					xml: xmlhttp.responseText,
-					isTMX: (xmlData.type === "tmx")
-				};
-				// callback
-				onload();
-			};
+			var xmlhttp = new XMLHttpRequest();
+			// to ensure our document is treated as a XML file
+			if (xmlhttp.overrideMimeType)
+				xmlhttp.overrideMimeType('text/xml');
+			
+			xmlhttp.open("GET", xmlData.src + me.nocache, true);
+						
+			// set the callbacks
+			xmlhttp.ontimeout = onerror;
+			xmlhttp.onreadystatechange = function() {
+				if (xmlhttp.readyState==4) {
+					// status = 0 when file protocol is used, or cross-domain origin,
+					// (With Chrome use "--allow-file-access-from-files --disable-web-security")
+					if ((xmlhttp.status==200) || ((xmlhttp.status==0) && xmlhttp.responseText)){
+						// get the TMX content
+						xmlList[xmlData.name] = {
+							xml: xmlhttp.responseText,
+							isTMX: (xmlData.type === "tmx")
+						};
+						// fire the callback
+						onload();
 		
+					} else {
+						onerror();
+					}
+				}
+			};
+			
 			// send the request
-			xmlhttp.send();
-
+			xmlhttp.send(null);
+			
+			
 		};
 			
 		/**
@@ -3593,7 +3577,8 @@ var me = me || {};
 		renderVelocity : false,
 		
 		/**
-		 * show the debug Panel
+		 * show the debug Panel <br>
+		 * Heap Memory information is available using Chrome when using the "--enable-memory-info" parameter<br>
 		 * @public
 		 * @function
 		 */
@@ -3665,7 +3650,6 @@ var me = me || {};
 			this.area.renderDirty = new me.Rect(new me.Vector2d(270,5),15,15);
 			this.area.renderCollisionMap = new me.Rect(new me.Vector2d(270,25),15,15);
 			
-			
 			// some internal string/length
 			this.help_str	  = "(s)how/(h)ide";
 			this.help_str_len = this.font.measureText(me.video.getScreenFrameBuffer(), this.help_str).width;
@@ -3675,6 +3659,9 @@ var me = me || {};
 			me.input.bindKey(me.input.KEY.S, "show");
 			me.input.bindKey(me.input.KEY.H, "hide");
 			
+			// memory heap sample points
+			this.samples = [];
+
 			// make it visible
 			this.show();
 		},
@@ -3718,7 +3705,7 @@ var me = me || {};
 			{
 				this.hide();
 			}
-
+			
 			return true;
 		},
 		
@@ -3754,6 +3741,36 @@ var me = me || {};
 			// force repaint
 			me.game.repaint();
 		}, 
+		
+		/** @private */
+		drawMemoryGraph : function (context, startX, endX) {
+			if (window.performance && window.performance.memory) {
+				var usedHeap  = Number.prototype.round(window.performance.memory.usedJSHeapSize/1048576, 2);
+				var totalHeap =  Number.prototype.round(window.performance.memory.totalJSHeapSize/1048576, 2);
+				
+				var len = endX - startX;
+				
+				// remove the first item
+				this.samples.shift();
+				// add a new sample (25 is the height of the graph)
+				this.samples[len] = (usedHeap / totalHeap)  * 25;
+				
+				// draw rhe graph
+				for (var x = len;x--;) {
+					var where = endX - (len - x);
+					context.beginPath();		
+					context.strokeStyle = "lightgreen";			
+					context.moveTo(where, 30);
+					context.lineTo(where, 30 - (this.samples[x] || 0));
+					context.stroke();
+				}
+				// display the current value
+				this.font.draw(context, usedHeap + '/' + totalHeap + ' MB', startX, 5);
+			} else {
+				// Heap Memory information not available
+				this.font.draw(context, "??/?? MB", startX, 5);
+			}
+		},
 
 		/** @private */
 		draw : function(context) {
@@ -3779,7 +3796,9 @@ var me = me || {};
 			this.font.draw(context, "?dirtyRect  ["+ (me.debug.renderDirty?"x":" ") +"]", 		200, 5);
 			this.font.draw(context, "?col. layer ["+ (me.debug.renderCollisionMap?"x":" ") +"]", 200, 20);
 
-
+			// draw the memory heap usage 
+			this.drawMemoryGraph(context, 300, this.width - this.help_str_len - 15);
+			
 			// some help string
 			this.font.draw(context, this.help_str, this.width - this.help_str_len - 5, 20);
 			
@@ -5164,25 +5183,6 @@ var me = me || {};
 				},
 
 				/**
-				 * collision detection
-				 * @private
-				 */
-				checkCollision : function(obj) {
-					var res = this.collisionBox.collideVsAABB(obj.collisionBox);
-
-					if (res.x != 0 || res.y != 0) {
-						// notify the object
-						this.onCollision(res, obj);
-						// return the type (deprecated)
-						res.type = this.type;
-						// return a reference of the colliding object
-						res.obj  = this;
-						return res;
-					}
-					return null;
-				},
-
-				/**
 				 * onCollision Event function<br>
 				 * called by the game manager when the object collide with shtg<br>
 				 * by default, if the object type is Collectable, the destroy function is called
@@ -5666,25 +5666,6 @@ var me = me || {};
 				},
 
 				/**
-				 * collision detection
-				 * @private
-				 */
-				checkCollision : function(obj) {
-					var res = this.collisionBox.collideVsAABB(obj.collisionBox);
-
-					if (res.x != 0 || res.y != 0) {
-						// notify the object
-						this.onCollision(res, obj);
-						// return the type
-						res.type = this.type;
-						// return a reference of the colliding object
-						res.obj  = this;
-						return res;
-					}
-					return null;
-				},
-
-				/**
 				 * onCollision Event function<br>
 				 * called by the game manager when the object collide with shtg
 				 * @param {me.Vector2d} res collision vector
@@ -5807,7 +5788,7 @@ var me = me || {};
  * Font / Bitmap font
  *
  * ASCII Table
- * http://www.asciitable.com/
+ * http://www.asciitable.com/ 
  * [ !"#$%&'()*+'-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_'abcdefghijklmnopqrstuvwxyz]
  *
  * -> first char " " 32d (0x20);
@@ -5940,7 +5921,7 @@ var me = me || {};
 		sSize : null,
 		// first char in the ascii table
 		firstChar : 0x20,
-
+		
 		// #char per row
 		charCount : 0,
 
@@ -5951,7 +5932,7 @@ var me = me || {};
 
 			// font characters size;
 			this.size = new me.Vector2d();
-
+			
 			// font scaled size;
 			this.sSize = new me.Vector2d();
 
@@ -5963,9 +5944,9 @@ var me = me || {};
 
 			// set a default alignement
 			this.align = this.ALIGN.RIGHT
-
+			
 			// resize if necessary
-			if (scale) {
+			if (scale) { 
 				this.resize(scale);
 			}
 
@@ -5973,7 +5954,7 @@ var me = me || {};
 
 		/**
 		 * Load the font metrics
-		 * @private
+		 * @private	
 		 */
 		loadFontMetrics : function(font, size) {
 			this.font = me.loader.getImage(font);
@@ -5982,8 +5963,8 @@ var me = me || {};
 			this.size.x = size.x || size;
 			this.size.y = size.y || this.font.height;
 			this.sSize.copy(this.size);
-
-			// #char per row
+			
+			// #char per row  
 			this.charCount = ~~(this.font.width / this.size.x);
 		},
 
@@ -5999,7 +5980,7 @@ var me = me || {};
 				this.resize(scale);
 			}
 		},
-
+		
 		/**
 		 * change the font display size
 		 * @param {int} scale ratio
@@ -6045,17 +6026,17 @@ var me = me || {};
 					x -= this.measureText(text).width * 0.5;
 					break;
 			};
-
+			
 			// draw the text
 			for ( var i = 0,len = text.length; i < len; i++) {
 				// calculate the char index
 				var idx = text.charCodeAt(i) - this.firstChar;
 				// draw it
 				context.drawImage(this.font,
-						this.size.x * (idx % this.charCount),
-						this.size.y * ~~(idx / this.charCount),
-						this.size.x, this.size.y,
-						~~x, ~~y,
+						this.size.x * (idx % this.charCount), 
+						this.size.y * ~~(idx / this.charCount), 
+						this.size.x, this.size.y, 
+						~~x, ~~y, 
 						this.sSize.x, this.sSize.y);
 				x += this.sSize.x;
 			}
@@ -6380,7 +6361,8 @@ var me = me || {};
 			this.HUD_invalidated = true;
 
 			// create a canvas where to draw everything
-			this.HUDCanvasSurface = me.video.createCanvasSurface(this.width, this.height);
+			this.HUDCanvas = me.video.createCanvas(this.width, this.height);
+			this.HUDCanvasSurface = this.HUDCanvas.getContext('2d');
 			
 			// this is a little hack to ensure the HUD is always the first draw
 			this.z = 999;
@@ -6538,7 +6520,7 @@ var me = me || {};
 					me.video.clearSurface(this.HUDCanvasSurface, this.bgcolor);
 				}
 				else {
-					this.HUDCanvasSurface.canvas.width = this.HUDCanvasSurface.canvas.width;
+					this.HUDCanvas.width = this.HUDCanvas.width;
 				}
 				for ( var i = this.objCount, obj; i--, obj = this.HUDobj[i];) {
 					if (obj.visible) {
@@ -6551,7 +6533,7 @@ var me = me || {};
 				}
 			}
 			// draw the HUD
-			context.drawImage(this.HUDCanvasSurface.canvas, this.pos.x, this.pos.y);
+			context.drawImage(this.HUDCanvas, this.pos.x, this.pos.y);
 			// reset the flag
 			this.HUD_invalidated = false;
 		}
@@ -6597,7 +6579,7 @@ var me = me || {};
 		var audio_channels = {};
 
 		// supported Audio Format
-		var supportedFormat = [ "mp3", "ogg", "wav" ];
+		var supportedFormat = [  "m4a", "mp3", "ogg", "wav"];
 
 		// Request format by the app/game
 		var requestedFormat = null;
@@ -6736,15 +6718,9 @@ var me = me || {};
 				var soundclip = audio_channels[sound_id][0];
 				// clone copy to create multiple channel version
 				for (var channel = 1; channel < sound_channel; channel++) {
-					// make sure it's a new copy each time
-					var node = soundclip.cloneNode(true);
-					// fix for IE platform not properly
-					// initializating everything when using cloneNode
-					if (node.currentSrc.length == 0) {
-						node.src = soundclip.src;
-					}
-					// allocate the new channel
-					audio_channels[sound_id][channel] = node;
+					// allocate the new additional channels
+					audio_channels[sound_id][channel] = new Audio( soundclip.src );
+					audio_channels[sound_id][channel].preload = "auto";
 					audio_channels[sound_id][channel].load();
 				}
 			}
@@ -6823,8 +6799,47 @@ var me = me || {};
 		obj.capabilities = {
 			mp3 : false,
 			ogg : false,
-			ma4 : false,
+			m4a : false,
 			wav : false
+		};
+		
+		/**
+		 * @private
+		 */
+		obj.detectCapabilities = function () {
+		
+			// init some audio variables
+			var a = document.createElement('audio');
+
+			if (a.canPlayType) {
+				obj.capabilities.mp3 = ("no" != a.canPlayType("audio/mpeg")) 
+									&& ("" != a.canPlayType("audio/mpeg"));
+
+				obj.capabilities.ogg = ("no" != a.canPlayType('audio/ogg; codecs="vorbis"'))
+									&& ("" != a.canPlayType('audio/ogg; codecs="vorbis"'));
+
+				obj.capabilities.wav = ("no" != a.canPlayType('audio/wav; codecs="1"'))
+									&& ("" != a.canPlayType('audio/wav; codecs="1"'));
+				
+				obj.capabilities.m4a = ("no" != a.canPlayType('audio/mp4; codecs="mp4a.40.2"'))
+									&& ("" != a.canPlayType('audio/mp4; codecs="mp4a.40.2"'));
+
+				// enable sound if any of the audio format is supported
+				me.sys.sound = obj.capabilities.mp3 ||
+							   obj.capabilities.ogg ||
+							   obj.capabilities.wav || 
+							   obj.capabilities.m4a;
+			}
+			
+			// check for specific platform
+			if ((me.sys.ua.search("iphone") > -1) || (me.sys.ua.search("ipod") > -1) || 
+				(me.sys.ua.search("ipad") > -1) || (me.sys.ua.search("android") > -1)) {
+				// if on mobile device, without a specific HTML5 acceleration framework
+				if (!navigator.isCocoonJS) {
+					// disable sound for now
+					me.sys.sound = false;
+				}
+			}
 		};
 
 		/**
@@ -6845,8 +6860,7 @@ var me = me || {};
 		 */
 		obj.init = function(audioFormat) {
 			if (!me.initialized) {
-				console.error("melonJS: me.audio.init() called before engine initialization.");
-				return false;
+				throw "melonJS: me.audio.init() called before engine initialization.";
 			}
 
 			if (audioFormat)
@@ -7307,10 +7321,14 @@ var me = me || {};
 		var backBufferCanvas = null;
 		var backBufferContext2D = null;
 		var wrapper = null;
+		
+		var deferResizeId = -1;
 
 		var double_buffering = false;
 		var game_width_zoom = 0;
 		var game_height_zoom = 0;
+		var auto_scale = false;
+		var maintainAspectRatio = true;
 
 		/*---------------------------------------------
 			
@@ -7333,7 +7351,8 @@ var me = me || {};
 		 * @param {Int} width game width
 		 * @param {Int} height game height
 		 * @param {Boolean} [double_buffering] enable/disable double buffering
-		 * @param {Number} [scale] enable scaling of the canvas (note : if scale is used, double_buffering must be enabled)
+		 * @param {Number} [scale] enable scaling of the canvas ('auto' for automatic scaling)
+		 * @param {Boolean} [maintainAspectRatio] maintainAspectRatio when scaling the display
 		 * @return {Boolean}
 		 * @example
 		 * // init the video with a 480x320 canvas
@@ -7343,33 +7362,45 @@ var me = me || {};
 		 *    return;
 		 * }
 		 */
-		api.init = function(wrapperid, game_width, game_height,	doublebuffering, scale) {
+		api.init = function(wrapperid, game_width, game_height,	doublebuffering, scale, aspectRatio) {
+			// ensure melonjs has been properly initialized
 			if (!me.initialized) {
-				console.error("melonJS: me.video.init() called before engine initialization.");
-				return false;
+				throw "melonJS: me.video.init() called before engine initialization.";
 			}
-
+			// check given parameters
 			double_buffering = doublebuffering || false;
-
-			// zoom only work with the double buffering since we 
-			// actually zoom the backbuffer before rendering it
-			me.sys.scale = double_buffering === true ? scale || 1.0 : 1.0;
-
-			game_width_zoom = game_width * me.sys.scale;
-			game_height_zoom = game_height * me.sys.scale;
-
-			canvas = document.createElement("canvas");
-
-			canvas.setAttribute("width", (game_width_zoom) + "px");
-			canvas.setAttribute("height", (game_height_zoom) + "px");
-			canvas.setAttribute("border", "0px solid black");
+			auto_scale  = (scale==='auto') || false;
+			maintainAspectRatio = (aspectRatio !== undefined) ? aspectRatio : true;
+			
+			// normalize scale
+			scale = (scale!=='auto') ? parseFloat(scale || 1.0) : 1.0
+			me.sys.scale = new me.Vector2d(scale, scale);
+			
+			// force double buffering if scaling is required
+			if (auto_scale || (scale !== 1.0)) {
+				double_buffering = true;
+			}
+			
+			// default scaled size value
+			game_width_zoom = game_width * me.sys.scale.x;
+			game_height_zoom = game_height * me.sys.scale.y;
+			
+			//add a channel for the onresize/onorientationchange event
+			window.addEventListener('resize', function (event) {me.event.publish(me.event.WINDOW_ONRESIZE, [event])}, false);
+			window.addEventListener('orientationchange', function (event) {me.event.publish(me.event.WINDOW_ONRESIZE, [event])}, false);
+			
+			// register to the channel
+			me.event.subscribe(me.event.WINDOW_ONRESIZE, me.video.onresize.bind(me.video));
+			
+			// create the main canvas
+			canvas = api.createCanvas(game_width_zoom, game_height_zoom);
 
 			// add our canvas
 			if (wrapperid) {
 				wrapper = document.getElementById(wrapperid);
 			}
-			else {
-				// if wrapperid is not defined (null)
+			// if wrapperid is not defined (null)
+			if (!wrapper) {
 				// add the canvas to document.body
 				wrapper = document.body;
 			}
@@ -7378,16 +7409,24 @@ var me = me || {};
 			// stop here if not supported
 			if (!canvas.getContext)
 				return false;
+				
+			// get the 2D context
 			context2D = canvas.getContext('2d');
 
 			// create the back buffer if we use double buffering
 			if (double_buffering) {
-				backBufferContext2D = api.createCanvasSurface(game_width, game_height);
-				backBufferCanvas = backBufferContext2D.canvas;
+				backBufferCanvas = api.createCanvas(game_width, game_height);
+				backBufferContext2D = backBufferCanvas.getContext('2d');
 			} else {
+				backBufferCanvas = canvas;
 				backBufferContext2D = context2D;
-				backBufferCanvas = context2D.canvas;
 			}
+			
+			// trigger an initial resize();
+			if (auto_scale) {
+				me.video.onresize(null);
+			}
+			
 			return true;
 		};
 
@@ -7440,20 +7479,33 @@ var me = me || {};
 		};
 
 		/**
-		 * allocate and return a new Canvas 2D surface
+		 * Create and return a new Canvas
+		 * @name me.video#createCanvas
+		 * @function
+		 * @param {Int} width width
+		 * @param {Int} height height
+		 * @return {Canvas}
+		 */
+		api.createCanvas = function(width, height) {
+			var _canvas = document.createElement("canvas");
+
+			_canvas.width = width || backBufferCanvas.width;
+			_canvas.height = height || backBufferCanvas.height;
+
+			return _canvas;
+		};
+
+		/**
+		 * Create and return a new 2D Context
 		 * @name me.video#createCanvasSurface
 		 * @function
-		 * @param {Int} width canvas width
-		 * @param {Int} height canvas height
+		 * @deprecated
+		 * @param {Int} width width
+		 * @param {Int} height height
 		 * @return {Context2D}
 		 */
 		api.createCanvasSurface = function(width, height) {
-			var privateCanvas = document.createElement("canvas");
-
-			privateCanvas.width = width || backBufferCanvas.width;
-			privateCanvas.height = height || backBufferCanvas.height;
-
-			return privateCanvas.getContext('2d');
+			return api.createCanvas(width, height).getContext('2d');
 		};
 
 		/**
@@ -7463,7 +7515,6 @@ var me = me || {};
 		 * @return {Canvas}
 		 */
 		api.getScreenCanvas = function() {
-			//console.log(VideoMngr._canvas);
 			return canvas;
 		};
 
@@ -7476,36 +7527,71 @@ var me = me || {};
 		api.getScreenFrameBuffer = function() {
 			return backBufferContext2D;
 		};
-
-		/* ---
 		
-			Update the display size (zoom ratio change)
-			if no parameter called from the outside (select box)
-			---								*/
-
 		/**
-		 * change the display scaling factor
+		 * callback for window resize event
+		 * @private
+		 */
+		api.onresize = function(event){
+			if (auto_scale) {
+				// get the parent container max size
+				var parent = me.video.getScreenCanvas().parentNode;
+				var max_width = parent.width || window.innerWidth;
+				var max_height = parent.height || window.innerHeight;
+				
+				if (deferResizeId) {
+					// cancel any previous pending resize
+					clearTimeout(deferResizeId);
+				}
+
+				if (maintainAspectRatio) {
+					// make sure we maintain the original aspect ratio
+					var designRatio = me.video.getWidth() / me.video.getHeight();
+					var screenRatio = max_width / max_height;
+					if (screenRatio < designRatio)
+						var scale = max_width / me.video.getWidth();
+					else
+						var scale = max_height / me.video.getHeight();
+		
+					// update the "front" canvas size
+					deferResizeId = me.video.updateDisplaySize.defer(scale,scale);
+				} else {
+					// scale the display canvas to fit with the parent container
+					deferResizeId = me.video.updateDisplaySize.defer( 
+						max_width / me.video.getWidth(),
+						max_height / me.video.getHeight()
+					);
+				}
+				return;
+			}
+			// make sure we have the correct relative canvas position cached
+			me.input.mouse.offset = me.video.getPos();
+		};
+		
+		/**
+		 * Modify the "displayed" canvas size
 		 * @name me.video#updateDisplaySize
 		 * @function
-		 * @param {Number} scale scaling value
+		 * @param {Number} scale X scaling value
+		 * @param {Number} scale Y scaling value
 		 */
-		api.updateDisplaySize = function(scale) {
-			if (double_buffering) {
-				if (scale)
-					me.sys.scale = scale;
-				else
-					// to be changed by something else :)
-					me.sys.scale = document.getElementById("screen size").value;
+		api.updateDisplaySize = function(scaleX, scaleY) {
+			// update the global scale variable
+			me.sys.scale.set(scaleX,scaleY);
+			// apply the new value
+			canvas.width = game_width_zoom = backBufferCanvas.width * scaleX;
+			canvas.height = game_height_zoom = backBufferCanvas.height * scaleY;
+			
+			// make sure we have the correct relative canvas position cached
+			me.input.mouse.offset = me.video.getPos();
 
-				game_width_zoom = backBufferCanvas.width * me.sys.scale;
-				game_height_zoom = backBufferCanvas.height * me.sys.scale;
-
-				canvas.width = game_width_zoom; // in pixels
-				canvas.height = game_height_zoom; // in pixels
-
-			}
+			// force a canvas repaint
+			api.blitSurface();
+			
+			// clear the timeout id
+			deferResizeId = -1;
 		};
-
+		
 		/**
 		 * Clear the specified context with the given color
 		 * @name me.video#clearSurface
@@ -7517,7 +7603,7 @@ var me = me || {};
 			context.save();
 			context.setTransform(1, 0, 0, 1, 0, 0);
 			context.fillStyle = col;
-			context.fillRect(0, 0, context.canvas.width, context.canvas.height);
+			context.fillRect(0, 0, api.getWidth(),api.getHeight());
 			context.restore();
 		};
 
@@ -7685,7 +7771,10 @@ var me = me || {};
 		var mouseInitialized = false;
 		var accelInitialized = false;
 		
-	
+		// list of supported mouse & touch events
+		var mouseEventList = ['mousewheel', 'mousemove', 'mousedown',  'mouseup', 'click', 'dblclick'];
+		var touchEventList = [ undefined,   'touchmove', 'touchstart', 'touchend', 'tap' , 'dbltap'];
+		
 		
 		/**
 		 * enable keyboard event
@@ -7711,18 +7800,19 @@ var me = me || {};
 				obj.mouse.pos = new me.Vector2d(0,0);
 				// get relative canvas position in the page
 				obj.mouse.offset = me.video.getPos();
-				// add listener for touch event if supported
+				
+				// add event listener for mouse & touch event
 				if (me.sys.touch) {
 					me.video.getScreenCanvas().addEventListener('touchmove', onMouseMove, false );
-					me.video.getScreenCanvas().addEventListener('touchstart', onTouchEvent, false );
-					me.video.getScreenCanvas().addEventListener('touchend', onTouchEvent, false );
-				}
-				// add listener for mouse event
-				else {
-					$.addEventListener('mousewheel', onMouseWheel, false );
+					for (var x = 2; x < touchEventList.length;++x) {
+						me.video.getScreenCanvas().addEventListener(touchEventList[x], onTouchEvent, false );
+					}
+				} else {
 					me.video.getScreenCanvas().addEventListener('mousemove', onMouseMove, false);
-					me.video.getScreenCanvas().addEventListener('mousedown', onMouseEvent, false );
-					me.video.getScreenCanvas().addEventListener('mouseup', onMouseEvent, false );
+					$.addEventListener('mousewheel', onMouseWheel, false );
+					for (var x = 2; x < mouseEventList.length;++x) {
+						me.video.getScreenCanvas().addEventListener(mouseEventList[x], onMouseEvent, false );
+					}
 				}
 				mouseInitialized = true;
 			}
@@ -7851,9 +7941,10 @@ var me = me || {};
 				var offset = obj.mouse.offset;
 				var x = e.pageX - offset.x;
 				var y = e.pageY - offset.y;
-				if (me.sys.scale != 1.0) {
-					x/=me.sys.scale;
-					y/=me.sys.scale;
+				var scale = me.sys.scale;
+				if (scale.x != 1.0 || scale.y != 1.0) {
+					x/=scale.x;
+					y/=scale.y;
 				}
 				obj.touches.push({ x: x, y: y, id: 0});
 			}
@@ -7864,9 +7955,10 @@ var me = me || {};
 					var t = e.changedTouches[i];
 					var x = t.clientX - offset.x;
 					var y = t.clientY - offset.y;
-					if (me.sys.scale != 1.0) {
-						x/=me.sys.scale;
-						y/=me.sys.scale;
+					var scale = me.sys.scale;
+					if (scale.x != 1.0 || scale.y != 1.0) {
+						x/=scale.x; 
+						y/=scale.y;
 					}
 					obj.touches.push({ x: x, y: y, id: t.identifier });
 				}
@@ -8270,43 +8362,32 @@ var me = me || {};
 			// make sure the mouse is initialized
 			enableMouseEvent();
 			
-			// register the mouse handler
-			switch (eventType) {
-				case 'mousewheel':
-				case 'mousemove':
-				case 'mousedown':
-				case 'mouseup':
-				case 'touchmove':
-				case 'touchstart':
-				case 'touchend':
-					// convert mouse event to touch event
-					// if on a touch enable device
-					if (me.sys.touch) {
-						// to be optimized
-						if (eventType == 'mousemove')
-							eventType = 'touchmove';
-						else if (eventType == 'mousedown')
-							eventType = 'touchstart';
-						else if (eventType == 'mouseup')
-							eventType = 'touchend';
-					} 
-					if (!obj.mouse.handlers[eventType]) {
-						obj.mouse.handlers[eventType] = [];
- 					}
-					
-					// check if this is a floating object or not
-					var _float = rect.floating===true?true:false;
-					// check if there is a given parameter
-					if (floating) {
-						// ovveride the previous value
-						_float = floating===true?true:false;
-					}
-					// initialize the handler
-					obj.mouse.handlers[eventType].push({rect:rect||null,cb:callback,floating:_float});
-					break;
-				default :
-					throw "melonJS : invalid event type : " + eventType;
+			// convert the mouse event into a touch event 
+			// if we are on a touch device
+			if ( me.sys.touch && (mouseEventList.indexOf(eventType) !== -1)) {
+				eventType = touchEventList[mouseEventList.indexOf(eventType)];
 			}
+			
+			// check if this is supported event
+			if (eventType && ((mouseEventList.indexOf(eventType) !== -1) || 
+				(touchEventList.indexOf(eventType) !== -1))) {
+				
+				// register the event
+				if (!obj.mouse.handlers[eventType]) {
+					obj.mouse.handlers[eventType] = [];
+ 				}
+				// check if this is a floating object or not
+				var _float = rect.floating===true?true:false;
+				// check if there is a given parameter
+				if (floating) {
+					// ovveride the previous value
+					_float = floating===true?true:false;
+				}
+				// initialize the handler
+				obj.mouse.handlers[eventType].push({rect:rect||null,cb:callback,floating:_float});
+				return;
+			}
+			throw "melonJS : invalid event type : " + eventType;
 		};
 		
 		/**
@@ -8315,47 +8396,39 @@ var me = me || {};
 		 * @name me.input#releaseMouseEvent
 		 * @public
 		 * @function
-		 * @param {String} eventType ('mousemove','mousedown','mouseup','mousewheel','touchstart','touchmove','touchend')
+		 * @param {String} eventType ('mousemove', 'mousedown', 'mouseup', 'mousewheel', 'click', 'dblclick', 'touchstart', 'touchmove', 'touchend', 'tap', 'dbltap')
 		 * @param {me.Rect} region
 		 * @example
 		 * // release the registered callback on the 'mousemove' event
 		 * me.input.releaseMouseEvent('mousemove', this.collisionBox);
 		 */
 		obj.releaseMouseEvent = function(eventType, rect) {
-			switch (eventType) {
-				case 'mousewheel':
-				case 'mousemove':
-				case 'mousedown':
-				case 'mouseup':
-				case 'touchmove':
-				case 'touchstart':
-				case 'touchend':
-					// convert mouse event to touch event
-					// if on a touch enable device
-					if (me.sys.touch) {
-						// to be optimized
-						if (eventType == 'mousemove')
-							eventType = 'touchmove';
-						else if (eventType == 'mousedown')
-							eventType = 'touchstart';
-						else if (eventType == 'mouseup')
-							eventType = 'touchend';
-					}
-					var handlers = obj.mouse.handlers[eventType];
-					if (handlers) {
-						for (var i = handlers.length, handler; i--, handler = handlers[i];) {
-							if (handler.rect === rect) {
-								// make sure all references are null
-								handler.rect = handler.cb = handler.floating = null;
-								obj.mouse.handlers[eventType].splice(i, 1);
-							}
+			// convert the mouse event into a touch event 
+			// if we are on a touch device
+			if ( me.sys.touch && (mouseEventList.indexOf(eventType) !== -1)) {
+				eventType = touchEventList[mouseEventList.indexOf(eventType)];
+			}			
+			// check if this is supported event
+			if (eventType && ((mouseEventList.indexOf(eventType) !== -1) || 
+				(touchEventList.indexOf(eventType) !== -1))) {
+				
+				// unregister the event
+				if (!obj.mouse.handlers[eventType]) {
+					obj.mouse.handlers[eventType] = [];
+ 				}
+				var handlers = obj.mouse.handlers[eventType];
+				if (handlers) {
+					for (var i = handlers.length, handler; i--, handler = handlers[i];) {
+						if (handler.rect === rect) {
+							// make sure all references are null
+							handler.rect = handler.cb = handler.floating = null;
+							obj.mouse.handlers[eventType].splice(i, 1);
 						}
 					}
-					break;
-				default :
-					throw "melonJS : invalid event type : " + eventType;
+				}
+				return;
 			}
-
+			throw "melonJS : invalid event type : " + eventType;
 		};
 
 		/**
@@ -9877,21 +9950,18 @@ var me = me || {};
 		 * @private
 		 */
 		draw : function(context, rect) {
-			// save context state
-			context.save();
 			// set layer opacity
+			var _alpha = context.globalAlpha
 			context.globalAlpha = this.opacity;
+			
 			// set layer color
 			context.fillStyle = this.color;
 
-			// correct the rect size is the map is not at the default screen position
-			// (fixme : this might not work with dirtyRect)
-			var shift = game.currentLevel.pos;
 			// clear the specified rect
-			context.fillRect(rect.left - shift.x, rect.top - shift.y, rect.width, rect.height);
+			context.fillRect(rect.left, rect.top, rect.width, rect.height);
 
-			// restore context state
-			context.restore();
+			// restore context alpha value
+			context.globalAlpha = _alpha;
 		}
 	});	
 
@@ -10413,8 +10483,8 @@ var me = me || {};
 				
 				// if pre-rendering method is use, create the offline canvas
 				if (this.preRender) {
-					this.layerSurface = me.video.createCanvasSurface(this.width	* this.tilewidth, this.height * this.tileheight);
-					this.layerCanvas = this.layerSurface.canvas;
+					this.layerCanvas = me.video.createCanvas(this.width	* this.tilewidth, this.height * this.tileheight);
+					this.layerSurface = this.layerCanvas.getContext('2d');
 					
 					// set alpha value for this layer
 					this.layerSurface.globalAlpha = this.opacity;
@@ -11292,7 +11362,7 @@ var me = me || {};
 		 */
 		this.to = function(properties, duration) {
 
-			if (duration !== null) {
+			if (duration !== undefined) {
 
 				_duration = duration;
 
@@ -11627,7 +11697,7 @@ var me = me || {};
 	/** @ignore */
 	me.Tween.Easing.Quartic.EaseOut = function(k) {
 
-		return 1 - --k * k * k * k;
+		return 1 - (--k * k * k * k);
 
 	}
 	/** @ignore */
@@ -11706,7 +11776,7 @@ var me = me || {};
 	/** @ignore */
 	me.Tween.Easing.Circular.EaseOut = function(k) {
 
-		return Math.sqrt(1 - --k * k);
+		return Math.sqrt(1 - (--k * k));
 
 	};
 	/** @ignore */
@@ -11919,7 +11989,16 @@ var me = me || {};
 		 */
 		obj.KEYUP = "me.input.keyup";
 
-
+		/**
+		 * Channel Constant for when the (browser) window is resized <br>
+		 * note the `orientationchange` event will also trigger this channel<br>
+		 * Data passed : {Event} Event object <br>
+		 * @public
+		 * @type {String}
+		 * @name me.event#KEYUP
+		 */
+		obj.WINDOW_ONRESIZE = "window.onresize";
+		
 		/**
 		 * Publish some data on a channel
 		 * @name me.event#publish

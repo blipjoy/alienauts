@@ -97,8 +97,13 @@ var game = {
         }
     },
 
-    // Helper function to generate a hex string
+    // Helper function to generate a hex string.
     "toHex" : function toHex(num, pad) {
         return ("0000000000000000" + num.toString(16)).substr(-(pad || 2));
+    },
+
+    // Return the number exactly halfway between a and b.
+    "midpoint" : function midpoint(a, b) {
+        return (a + b) / 2;
     }
 };

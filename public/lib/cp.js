@@ -56,12 +56,6 @@ var assertSoft = function(value, message)
 	}
 };
 
-var hashPair = function(a, b)
-{
-//	assert(typeof(a) === 'string' || typeof(a) === 'number', "HashPair used on something not a string or a number");
-	return a + ' ' + b;
-};
-
 var mymin = function(a, b)
 {
 	return a < b ? a : b;
@@ -75,7 +69,7 @@ var min, max;
 if (typeof window === 'object' && window.navigator.userAgent.indexOf('Firefox') > -1){
 	// On firefox, Math.min and Math.max are really fast:
 	// http://jsperf.com/math-vs-greater-than/8
- 	min = Math.min;
+	min = Math.min;
 	max = Math.max;
 } else {
 	// On chrome and safari, Math.min / max are slooow. The ternery operator above is faster
@@ -83,6 +77,22 @@ if (typeof window === 'object' && window.navigator.userAgent.indexOf('Firefox') 
 	min = mymin;
 	max = mymax;
 }
+
+/* The hashpair function takes two numbers and returns a hash code for them.
+ * Required that hashPair(a, b) === hashPair(b, a).
+ * Chipmunk's hashPair function is defined as:
+ *   #define CP_HASH_COEF (3344921057ul)
+ *   #define CP_HASH_PAIR(A, B) ((cpHashValue)(A)*CP_HASH_COEF ^ (cpHashValue)(B)*CP_HASH_COEF)
+ * But thats not suitable in javascript because multiplying by a large number will make the number
+ * a large float.
+ *
+ * The result of hashPair is used as the key in objects, so it returns a string.
+ */
+var hashPair = function(a, b)
+{
+	//assert(typeof(a) === 'number', "HashPair used on something not a number");
+	return a < b ? a + ' ' + b : b + ' ' + a;
+};
 
 var deleteObjFromList = function(arr, obj)
 {
@@ -708,6 +718,9 @@ var Shape = cp.Shape = function(body) {
 Shape.prototype.setElasticity = function(e) { this.e = e; };
 Shape.prototype.setFriction = function(u) { this.body.activate(); this.u = u; };
 Shape.prototype.setLayers = function(layers) { this.body.activate(); this.layers = layers; };
+Shape.prototype.setSensor = function(sensor) { this.body.activate(); this.sensor = sensor; };
+Shape.prototype.setCollisionType = function(collision_type) { this.body.activate(); this.collision_type = collision_type; };
+Shape.prototype.getBody = function() { return this.body; };
 
 Shape.prototype.active = function()
 {
@@ -965,7 +978,7 @@ SegmentShape.prototype.segmentQuery = function(a, b)
 		if(ad*bd < 0){
 			return new SegmentQueryInfo(this, ad/(ad - bd), flipped_n);
 		}
-	} else if(r != 0){
+	} else if(r !== 0){
 		var info1 = circleSegmentQuery(this, this.ta, this.r, a, b);
 		var info2 = circleSegmentQuery(this, this.tb, this.r, a, b);
 		
@@ -1222,17 +1235,17 @@ PolyShape.prototype.segmentQuery = function(a, b)
 	}
 };
 
-/*
-PolyShape.getNumVerts = function()
-{
-	return this.verts.length;
-};*/
 
-/*
+PolyShape.prototype.getNumVerts = function()
+{
+	return this.verts.length/2;
+};
+
+
 PolyShape.prototype.getVert = function(idx)
 {
-	return this.verts[idx];
-};*/
+	return new Vect(this.verts[idx*2],this.verts[idx*2+1]);
+};
 
 PolyShape.prototype.valueOnAxis = function(n, d)
 {
@@ -1273,19 +1286,26 @@ PolyShape.prototype.containsVertPartial = function(vx, vy, n)
 	return true;
 };
 
+// These methods are provided for API compatibility with Chipmunk. I recommend against using
+// them - just access the poly.verts list directly.
+PolyShape.prototype.getNumVerts = function() { return this.verts.length / 2; };
+PolyShape.prototype.getVert = function(i)
+{
+	return new Vect(this.verts[i * 2], this.verts[i * 2 + 1]);
+};
 
 /* Copyright (c) 2007 Scott Lembcke
- * 
+ *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -1307,7 +1327,7 @@ var Body = cp.Body = function(m, i) {
 	//this.m;
 	/// Mass inverse.
 	//this.m_inv;
-	
+
 	/// Moment of inertia of the body.
 	/// Must agree with cpBody.i_inv! Use body.setMoment() when changing the moment for this reason.
 	//this.i;
@@ -1320,7 +1340,7 @@ var Body = cp.Body = function(m, i) {
 	this.vx = this.vy = 0;
 	/// Force acting on the rigid body's center of gravity.
 	this.f = new Vect(0,0);
-	
+
 	/// Rotation of the body around it's center of gravity in radians.
 	/// Must agree with cpBody.rot! Use cpBodySetAngle() when changing the angle for this reason.
 	//this.a;
@@ -1328,26 +1348,26 @@ var Body = cp.Body = function(m, i) {
 	this.w = 0;
 	/// Torque applied to the body around it's center of gravity.
 	this.t = 0;
-	
+
 	/// Cached unit length vector representing the angle of the body.
 	/// Used for fast rotations using cpvrotate().
 	//cpVect rot;
-	
+
 	/// Maximum velocity allowed when updating the velocity.
 	this.v_limit = Infinity;
 	/// Maximum rotational rate (in radians/second) allowed when updating the angular velocity.
 	this.w_limit = Infinity;
-	
+
 	// This stuff is all private.
 	this.v_biasx = this.v_biasy = 0;
 	this.w_bias = 0;
-	
+
 	this.space = null;
-	
+
 	this.shapeList = [];
 	this.arbiterList = null; // These are both wacky linked lists.
 	this.constraintList = null;
-	
+
 	// This stuff is used to track information on the collision graph.
 	this.nodeRoot = null;
 	this.nodeNext = null;
@@ -1382,7 +1402,7 @@ if (typeof DEBUG !== 'undefined' && DEBUG) {
 	{
 		assert(this.m === this.m && this.m_inv === this.m_inv, "Body's mass is invalid.");
 		assert(this.i === this.i && this.i_inv === this.i_inv, "Body's moment is invalid.");
-		
+
 		v_assert_sane(this.p, "Body's position is invalid.");
 		v_assert_sane(this.f, "Body's force is invalid.");
 		assert(this.vx === this.vx && Math.abs(this.vx) !== Infinity, "Body's velocity is invalid.");
@@ -1391,15 +1411,19 @@ if (typeof DEBUG !== 'undefined' && DEBUG) {
 		assert(this.a === this.a && Math.abs(this.a) !== Infinity, "Body's angle is invalid.");
 		assert(this.w === this.w && Math.abs(this.w) !== Infinity, "Body's angular velocity is invalid.");
 		assert(this.t === this.t && Math.abs(this.t) !== Infinity, "Body's torque is invalid.");
-		
+
 		v_assert_sane(this.rot, "Internal error: Body's rotation vector is invalid.");
-		
+
 		assert(this.v_limit === this.v_limit, "Body's velocity limit is invalid.");
 		assert(this.w_limit === this.w_limit, "Body's angular velocity limit is invalid.");
 	};
 } else {
 	Body.prototype.sanityCheck = function(){};
 }
+
+Body.prototype.getPos = function() { return this.p; };
+Body.prototype.getVel = function() { return new Vect(this.vx, this.vy); };
+Body.prototype.getAngVel = function() { return this.w; };
 
 /// Returns true if the body is sleeping.
 Body.prototype.isSleeping = function()
@@ -1463,7 +1487,7 @@ var filterConstraints = function(node, body, filter)
 	} else {
 		node.next_b = filterConstraints(node.next_b, body, filter);
 	}
-	
+
 	return node;
 };
 
@@ -1480,11 +1504,17 @@ Body.prototype.setPos = function(pos)
 	this.p = pos;
 };
 
-Body.prototype.setVelocity = function(velocity)
+Body.prototype.setVel = function(velocity)
 {
 	this.activate();
 	this.vx = velocity.x;
 	this.vy = velocity.y;
+};
+
+Body.prototype.setAngVel = function(w)
+{
+	this.activate();
+	this.w = w;
 };
 
 Body.prototype.setAngleInternal = function(angle)
@@ -1502,7 +1532,7 @@ Body.prototype.setAngle = function(angle)
 	this.activate();
 	this.sanityCheck();
 	this.setAngleInternal(angle);
-}
+};
 
 Body.prototype.velocity_func = function(gravity, damping, dt)
 {
@@ -1517,26 +1547,26 @@ Body.prototype.velocity_func = function(gravity, damping, dt)
 	var scale = (lensq > v_limit*v_limit) ? v_limit / Math.sqrt(len) : 1;
 	this.vx = vx * scale;
 	this.vy = vy * scale;
-	
+
 	var w_limit = this.w_limit;
 	this.w = clamp(this.w*damping + this.t*this.i_inv*dt, -w_limit, w_limit);
-	
+
 	this.sanityCheck();
 };
 
 Body.prototype.position_func = function(dt)
 {
 	//this.p = vadd(this.p, vmult(vadd(this.v, this.v_bias), dt));
-	
+
 	//this.p = this.p + (this.v + this.v_bias) * dt;
 	this.p.x += (this.vx + this.v_biasx) * dt;
 	this.p.y += (this.vy + this.v_biasy) * dt;
 
 	this.setAngleInternal(this.a + (this.w + this.w_bias)*dt);
-	
+
 	this.v_biasx = this.v_biasy = 0;
 	this.w_bias = 0;
-	
+
 	this.sanityCheck();
 };
 
@@ -1562,20 +1592,20 @@ Body.prototype.applyImpulse = function(j, r)
 
 Body.prototype.getVelAtPoint = function(r)
 {
-	return vadd(new Vect(this.vx, this.vy), vmult(vperp(r), body.w));
+	return vadd(new Vect(this.vx, this.vy), vmult(vperp(r), this.w));
 };
 
 /// Get the velocity on a body (in world units) at a point on the body in world coordinates.
 Body.prototype.getVelAtWorldPoint = function(point)
 {
-	return this.getVelAtPoint(vsub(point, body.p));
+	return this.getVelAtPoint(vsub(point, this.p));
 };
 
 /// Get the velocity on a body (in world units) at a point on the body in local coordinates.
 Body.prototype.getVelAtLocalPoint = function(point)
 {
-	return this.getVelAtPoint(vrotate(point, body.rot));
-}
+	return this.getVelAtPoint(vrotate(point, this.rot));
+};
 
 Body.prototype.eachShape = function(func)
 {
@@ -1588,7 +1618,7 @@ Body.prototype.eachConstraint = function(func)
 {
 	var constraint = this.constraintList;
 	while(constraint) {
-		var next = constraint.next(body);
+		var next = constraint.next(this);
 		func(constraint);
 		constraint = next;
 	}
@@ -1599,10 +1629,10 @@ Body.prototype.eachArbiter = function(func)
 	var arb = this.arbiterList;
 	while(arb){
 		var next = arb.next(this);
-		
+
 		arb.swappedColl = (this === arb.body_b);
 		func(arb);
-		
+
 		arb = next;
 	}
 };
@@ -2642,6 +2672,15 @@ var Arbiter = function(a, b) {
 	this.state = 'first coll';
 };
 
+Arbiter.prototype.getShapes = function()
+{
+	if (this.swappedColl){
+		return [this.b, this.a];
+	}else{
+		return [this.a, this.b];
+	}
+}
+
 /// Calculate the total impulse that was applied by this arbiter.
 /// This function should only be called from a post-solve, post-step or cpBodyEachArbiter callback.
 Arbiter.prototype.totalImpulse = function()
@@ -3444,6 +3483,8 @@ var Space = cp.Space = function() {
 	// Cache the collideShapes callback function for the space.
 	this.collideShapes = this.makeCollideShapes();
 };
+
+Space.prototype.getCurrentTimeStep = function() { return this.curr_dt; };
 
 /// returns true from inside a callback and objects cannot be added/removed.
 Space.prototype.isLocked = function()

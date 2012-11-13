@@ -265,7 +265,7 @@ window.cm = (function cm() {
         height = me.video.getHeight();
 
         // Initialize timing variables.
-        var stepTime = 0.25 / me.sys.fps;
+        var stepTime = 0.25 / me.sys.fps; // FIXME: Use a constant step time that is not based on FPS
         lastStep = me.timer.getTime();
 
         // Initialize Chipmunk space.

@@ -90,7 +90,7 @@ game.Player = me.Rect.extend({
         context.translate(p.x, c.HEIGHT - p.y);
         context.rotate(-b.a);
 
-        context.fillStyle = b.isSleeping() ? "gray" : this.color;
+        context.fillStyle = game.getColor(this.color);
         context.fillRect(hw, hh, w, h);
 
         context.strokeStyle = "black";

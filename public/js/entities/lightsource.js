@@ -2,42 +2,62 @@ game.LightSource = game.Circle.extend({
     "init" : function init(x, y, r, settings) {
         settings = settings || {};
         settings.intensity = settings.intensity || 200; // Intensity radius
-        settings.brightness = settings.brightness || 0.5; // Gradient ratio
-        settings.color = settings.color || "rgba(255, 255, 224, 0.8)";
-        settings.color2 = settings.color2 || "rgba(255, 255, 224, 0)";
+        settings.brightness = settings.brightness || 0.8; // Gradient ratio
+        settings.color = settings.color || [ 255, 255, 224 ];
 
         this.settings = settings;
+
+        var self = this;
+        // FIXME: Call this function every time the browser resizes
+        function createCanvas() {
+            var canvas = document.createElement("canvas");
+            canvas.width = c.WIDTH;
+            canvas.height = c.HEIGHT;
+
+            self.backbuffer = canvas.getContext("2d");
+        }
+        createCanvas();
 
         this.parent(x, y, r, settings);
     },
 
     "draw" : function draw(context) {
         var space = cm.getSpace(),
-            p = this.body.p,
+            body = this.body,
+            p = body.p,
             x = p.x,
             y = c.HEIGHT - p.y,
             r = this.r,
-            s = this.settings,
-            intensity = s.intensity,
+            settings = this.settings,
+            intensity = settings.intensity,
             i2 = intensity * 2,
-            bulb = this.body.shapeList[0];
+            backbuffer = this.backbuffer;
 
-        context.save();
 
-        context.beginPath();
+        // Clear backbuffer
+        backbuffer.globalCompositeOperation = "copy";
 
-        // Set the default clipping path to cover the entire canvas
-        context.moveTo(0, 0);
-        context.lineTo(c.WIDTH, 0);
-        context.lineTo(c.WIDTH, c.HEIGHT);
-        context.lineTo(0, c.HEIGHT);
-        context.lineTo(0, 0);
+        // FIXME: Render beams (like from a flashlight or lamp with a shade)
+        // Should be possible with a clipping region
+
+        // Render a radial beam of light
+        var gradial = backbuffer.createRadialGradient(x, y, r * 1.5, x, y, intensity);
+        gradial.addColorStop(0, game.getColor(settings.color, settings.brightness));
+        gradial.addColorStop(1, game.getColor(settings.color, 0));
+
+        backbuffer.fillStyle = gradial;
+        backbuffer.fillRect(x - intensity, y - intensity, i2, i2);
+
+        // Render shadows as subtractive polygons
+        backbuffer.globalCompositeOperation = "destination-out";
+        backbuffer.fillStyle = "black";
+
 
         // Draw shadows for every polygon shape within the intensity radius
         var bb = new cp.BB(x - intensity, p.y - intensity, x + intensity, p.y + intensity);
         space.bbQuery(bb, c.LAYER_SHAPES, 0, function (shape) {
-            // FIXME: Support circles
-            if (shape == bulb || shape.type != "poly") {
+            // FIXME: Support segments and circles
+            if (shape == body.shapeList[0] || shape.type != "poly") {
                 return;
             }
 
@@ -80,25 +100,28 @@ game.LightSource = game.Circle.extend({
                 cp.v.normalize(cp.v.sub(corners[1], p)).mult(i2)
             ];
 
+            // Create a shadow polygon and clear its region in the light beam
+            backbuffer.beginPath();
+            backbuffer.moveTo(corners[0].x, c.HEIGHT - corners[0].y);
+            backbuffer.lineTo(corners[1].x, c.HEIGHT - corners[1].y);
+            backbuffer.lineTo(corners[1].x + rays[1].x, c.HEIGHT - corners[1].y - rays[1].y);
+            backbuffer.lineTo(corners[0].x + rays[0].x, c.HEIGHT - corners[0].y - rays[0].y);
+
+            backbuffer.fill();
+
+/*
             // Create a shadow polygon with reverse winding
             context.moveTo(corners[0].x, c.HEIGHT - corners[0].y);
             context.lineTo(corners[0].x + rays[0].x, c.HEIGHT - corners[0].y - rays[0].y);
             context.lineTo(corners[1].x + rays[1].x, c.HEIGHT - corners[1].y - rays[1].y);
             context.lineTo(corners[1].x, c.HEIGHT - corners[1].y);
             context.lineTo(corners[0].x, c.HEIGHT - corners[0].y);
+*/
         });
 
-        // Magic!
-        context.clip();
 
-        // Draw light halo
-        var gradial = context.createRadialGradient(x, y, r * 1.5, x, y, intensity);
-        gradial.addColorStop(0, s.color);
-        gradial.addColorStop(1, s.color2);
-        context.fillStyle = gradial;
-        context.fillRect(x - intensity, y - intensity, i2, i2);
-
-        context.restore();
+        // Draw backbuffer to screen
+        context.drawImage(backbuffer.canvas, 0, 0);
 
         // Draw bulb
         this.parent(context);

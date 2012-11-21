@@ -105,5 +105,21 @@ var game = {
     // Return the number exactly halfway between a and b.
     "midpoint" : function midpoint(a, b) {
         return (a + b) / 2;
+    },
+
+    // Return a CSS color with optional alpha.
+    "getColor" : function getColor(rgb, a) {
+        if (Array.isArray(rgb)) {
+            if (typeof(a) === "number") {
+                return "rgba(" + rgb[0] + "," + rgb[1] + "," + rgb[2] + "," + a + ")";
+            }
+
+            return "rgb(" + rgb[0] + "," + rgb[1] + "," + rgb[2] + ")";
+        }
+        else if ((typeof(a) === "undefined") && (typeof(rgb) === "string")) {
+            return rgb;
+        }
+
+        throw "Tried to set alpha on a color that isn't an array";
     }
 };

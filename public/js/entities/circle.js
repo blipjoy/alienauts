@@ -3,10 +3,11 @@ game.Circle = me.Rect.extend({
         settings = settings || {};
 
         // Default settings
-        settings.color = settings.color || "#"
-            + game.toHex(Math.floor(Math.random() * 256))
-            + game.toHex(Math.floor(Math.random() * 256))
-            + game.toHex(Math.floor(Math.random() * 256));
+        settings.color = settings.color || [
+            Math.floor(Math.random() * 256),
+            Math.floor(Math.random() * 256),
+            Math.floor(Math.random() * 256)
+        ];
         settings.mass = settings.mass || 1;
         settings.group = settings.group || 0;
         settings.isBalloon = settings.isBalloon || false;
@@ -67,7 +68,7 @@ game.Circle = me.Rect.extend({
         context.lineTo(this.r, 0);
         context.arc(0, 0, this.r, 0, Math.PI * 2);
 
-        context.fillStyle = b.isSleeping() ? "gray" : this.color;
+        context.fillStyle = game.getColor(this.color);
         context.fill();
 
         context.strokeStyle = "black";

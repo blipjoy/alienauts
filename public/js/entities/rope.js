@@ -83,7 +83,7 @@ game.Rope = Object.extend({
             this.c4.p.x + rot2.x, h - this.c4.p.y - rot2.y
         );
 
-        context.strokeStyle = this.color;
+        context.strokeStyle = game.getColor(this.color);
         context.lineWidth = 3;
         context.lineCap = "round";
         context.stroke();

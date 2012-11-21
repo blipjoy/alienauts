@@ -3,10 +3,11 @@ game.Line = Object.extend({
         settings = settings || {};
 
         // Default settings
-        settings.color = settings.color || "#"
-            + game.toHex(Math.floor(Math.random() * 256))
-            + game.toHex(Math.floor(Math.random() * 256))
-            + game.toHex(Math.floor(Math.random() * 256));
+        settings.color = settings.color || [
+            Math.floor(Math.random() * 256),
+            Math.floor(Math.random() * 256),
+            Math.floor(Math.random() * 256)
+        ];
         settings.mass = settings.mass || 1;
         settings.group = settings.group || 0;
         settings.elasticity = settings.elasticity || 0.3;
@@ -43,7 +44,7 @@ game.Line = Object.extend({
 
         context.lineWidth = this.r;
         context.lineCap = "round";
-        context.strokeStyle = this.color;
+        context.strokeStyle = game.getColor(this.color);
         context.stroke();
 
         context.restore();

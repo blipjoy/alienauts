@@ -44,10 +44,11 @@ game.PlayScreen = me.ScreenObject.extend({
         }), 1000);
 
         // Create a lightsource swinging from a rope.
-        var light = new game.LightSource(415, c.HEIGHT - 140, 10);
+        var light = new game.LightSource(415, c.HEIGHT - 140, 10, {
+            "brightness" : 0.4
+        });
         me.game.add(light, 1000);
         me.game.add(new game.Rope(light.body, space.staticBody, cp.v(-10, 0), cp.v(300, 165), 100), 999);
-
 
         me.game.sort();
 

@@ -16,7 +16,7 @@ game.Player = me.Rect.extend({
         shape.setFriction(0.8);
         shape.setLayers(c.LAYER_SHAPES);
 
-        this.body.p = cp.v(x, me.video.getHeight() - y);
+        this.body.p = cp.v(x, c.HEIGHT - y);
         space.addBody(this.body);
 
         this.lastPressed = [ false, false ];
@@ -32,7 +32,7 @@ game.Player = me.Rect.extend({
             ];
 
         pos.x = p.x - b.hw;
-        pos.y = me.video.getHeight() - p.y - b.hw;
+        pos.y = c.HEIGHT - p.y - b.hw;
 
         if (pressed[0] && !this.lastPressed[0]) {
             this.move(-200);
@@ -87,13 +87,12 @@ game.Player = me.Rect.extend({
         context.save();
 
         // FIXME: We probably shouldn't worry about rotation.
-        context.translate(p.x, me.video.getHeight() - p.y);
+        context.translate(p.x, c.HEIGHT - p.y);
         context.rotate(-b.a);
 
         context.fillStyle = b.isSleeping() ? "gray" : this.color;
         context.fillRect(hw, hh, w, h);
 
-        context.lineWidth = 3;
         context.strokeStyle = "black";
         context.strokeRect(hw, hh, w, h);
 

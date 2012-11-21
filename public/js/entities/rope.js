@@ -1,5 +1,11 @@
 game.Rope = Object.extend({
-    "init" : function init(body1, body2, anchor1, anchor2, length, m) {
+    "init" : function init(body1, body2, anchor1, anchor2, length, settings) {
+        settings = settings || {};
+
+        // Default settings
+        settings.color = settings.color || "saddlebrown";
+        settings.mass = settings.mass || 0.005;
+
         var space = cm.getSpace();
 
         this.c1 = body1;
@@ -7,8 +13,10 @@ game.Rope = Object.extend({
         this.a1 = anchor1;
         this.a2 = anchor2;
 
+        this.color = settings.color;
+
         function createControlPoint(endpoint, anchor, p, l) {
-            var body = new cp.Body(m, Infinity);
+            var body = new cp.Body(settings.mass, Infinity);
             body.p.x = p.x;
             body.p.y = p.y;
 
@@ -31,9 +39,12 @@ game.Rope = Object.extend({
         var seglenth = Math.round(length / 3);
 
         // Calculate midpoint between both endpoints.
+        var p1 = body1.isStatic() ? anchor1 : body1.p,
+            p2 = body2.isStatic() ? anchor2 : body2.p;
+
         var mid = cp.v(
-            game.midpoint(body1.p.x, body2.p.x),
-            game.midpoint(body1.p.y, body2.p.y)
+            game.midpoint(p1.x, p2.x),
+            game.midpoint(p1.y, p2.y)
         );
 
         // Create two control points
@@ -56,9 +67,9 @@ game.Rope = Object.extend({
     },
 
     "draw" : function draw(context) {
-        var h = me.video.getHeight();
-        var rot1 = cp.v.rotate(this.a1, this.c1.rot);
-        var rot2 = cp.v.rotate(this.a2, this.c4.rot);
+        var h = c.HEIGHT;
+        var rot1 = cp.v.rotate(this.c1.rot, this.a1);
+        var rot2 = cp.v.rotate(this.c4.rot, this.a2);
 
         context.save();
 
@@ -72,7 +83,7 @@ game.Rope = Object.extend({
             this.c4.p.x + rot2.x, h - this.c4.p.y - rot2.y
         );
 
-        context.strokeStyle = "#222";
+        context.strokeStyle = this.color;
         context.lineWidth = 3;
         context.lineCap = "round";
         context.stroke();

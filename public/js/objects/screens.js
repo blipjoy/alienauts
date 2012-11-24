@@ -39,16 +39,27 @@ game.PlayScreen = me.ScreenObject.extend({
             9, -13,
             -10, -15
         ];
-        me.game.add(new game.Poly(150, c.HEIGHT - 220, verts, cp.vzero, {
+        var poly = new game.Poly(250, c.HEIGHT - 220, verts, cp.vzero, {
             "color" : "dodgerblue"
-        }), 1000);
+        });
+        me.game.add(poly, 1000);
+        me.game.add(new game.Rope(poly.body, space.staticBody, cp.v(-20, 0), cp.v(270, 220), 130), 999);
 
         // Create a lightsource swinging from a rope.
         var light = new game.LightSource(415, c.HEIGHT - 140, 10, {
-            "brightness" : 0.4
+            "brightness" : 0.4,
+            "intensity" : 100
         });
         me.game.add(light, 1000);
         me.game.add(new game.Rope(light.body, space.staticBody, cp.v(-10, 0), cp.v(300, 165), 100), 999);
+
+
+        light = new game.LightSource(200, c.HEIGHT - 80, 10, {
+            "brightness" : 0.4,
+            "intensity" : 100
+        });
+        me.game.add(light, 1000);
+        space.addConstraint(new cp.PivotJoint(light.body, space.staticBody, cp.vzero, cp.v(200, 80)));
 
         me.game.sort();
 

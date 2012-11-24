@@ -13,11 +13,11 @@ game.PlayScreen = me.ScreenObject.extend({
                 "friction" : 1,
                 "color" : "black"
             }
-        ), 1000);
+        ), 1002);
 
         // Create player entity.
-        game.player = new game.Player(140, c.HEIGHT - 35);
-        me.game.add(game.player, 1000);
+        game.player = new game.Player(140, c.HEIGHT - 25);
+        me.game.add(game.player, 1002);
 
         // Bind input
         me.input.bindKey(me.input.KEY.LEFT, "left");
@@ -40,25 +40,27 @@ game.PlayScreen = me.ScreenObject.extend({
             -10, -15
         ];
         var poly = new game.Poly(250, c.HEIGHT - 220, verts, cp.vzero, {
-            "color" : "dodgerblue"
+            "color" : "navy"
         });
-        me.game.add(poly, 1000);
-        me.game.add(new game.Rope(poly.body, space.staticBody, cp.v(-20, 0), cp.v(270, 220), 130), 999);
+        me.game.add(poly, 1002);
+        me.game.add(new game.Rope(poly.body, space.staticBody, cp.v(-20, 0), cp.v(270, 220), 130), 1000);
 
         // Create a lightsource swinging from a rope.
         var light = new game.LightSource(415, c.HEIGHT - 140, 10, {
-            "brightness" : 0.4,
+            "brightness" : 0.25,
             "intensity" : 100
         });
-        me.game.add(light, 1000);
-        me.game.add(new game.Rope(light.body, space.staticBody, cp.v(-10, 0), cp.v(300, 165), 100), 999);
+        me.game.add(light, 1001);
+        me.game.add(new game.Rope(light.body, space.staticBody, cp.v(-10, 0), cp.v(300, 165), 100, {
+            "mass" : 0.1
+        }), 1000);
 
 
         light = new game.LightSource(200, c.HEIGHT - 80, 10, {
-            "brightness" : 0.4,
+            "brightness" : 0.25,
             "intensity" : 100
         });
-        me.game.add(light, 1000);
+        me.game.add(light, 1001);
         space.addConstraint(new cp.PivotJoint(light.body, space.staticBody, cp.vzero, cp.v(200, 80)));
 
         me.game.sort();

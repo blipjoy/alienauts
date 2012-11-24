@@ -44,9 +44,6 @@ game.Poly = Object.extend({
         context.translate(p.x, c.HEIGHT - p.y);
         context.rotate(-b.a);
 
-        context.fillStyle = game.getColor(this.color);
-        context.strokeStyle = "black";
-
         context.beginPath();
         context.moveTo(v[0], -v[1]);
 
@@ -57,7 +54,10 @@ game.Poly = Object.extend({
 
         context.closePath();
 
+        context.fillStyle = game.getColor(this.color);
         context.fill();
+
+        context.strokeStyle = "black";
         context.stroke();
 
         context.restore();

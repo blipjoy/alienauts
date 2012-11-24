@@ -156,6 +156,9 @@ game.LightSource = game.Circle.extend({
             backbuffer.lineTo(intensity + corners[1].x + rays[1].x, intensity - corners[1].y - rays[1].y);
             backbuffer.lineTo(intensity + corners[0].x + rays[0].x, intensity - corners[0].y - rays[0].y);
             backbuffer.fill();
+
+            // FIXME: Could potentially use the two corner vertices for highlighting,
+            // if a linear gradient is created across the perpendicular plane between them
         });
 
         // Draw backbuffer to screen

@@ -3,8 +3,8 @@ game.Rope = Object.extend({
         settings = settings || {};
 
         // Default settings
-        settings.color = settings.color || "saddlebrown";
-        settings.mass = settings.mass || 0.005;
+        settings.color = settings.color || "#41290E";
+        settings.mass = settings.mass || 0.5;
 
         var space = cm.getSpace();
 
@@ -83,9 +83,13 @@ game.Rope = Object.extend({
             this.c4.p.x + rot2.x, h - this.c4.p.y - rot2.y
         );
 
+        context.lineCap = "round";
+        context.strokeStyle = "black";
+        context.lineWidth = 5;
+        context.stroke();
+
         context.strokeStyle = game.getColor(this.color);
         context.lineWidth = 3;
-        context.lineCap = "round";
         context.stroke();
 
         context.restore();

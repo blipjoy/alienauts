@@ -3,7 +3,7 @@ game.Rope = Object.extend({
         settings = settings || {};
 
         // Default settings
-        settings.color = settings.color || "#41290E";
+        settings.color = settings.color || "#1C0C06";
         settings.mass = (settings.mass || 1) / 2;
 
         var space = cm.getSpace();

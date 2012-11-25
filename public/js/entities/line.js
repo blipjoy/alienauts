@@ -24,6 +24,7 @@ game.Line = Object.extend({
         shape.setFriction(settings.friction);
         shape.setLayers(c.LAYER_SHAPES);
         shape.group = settings.group;
+        shape.entity = this;
     },
 
     "update" : function update() {

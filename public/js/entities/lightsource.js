@@ -39,7 +39,7 @@ game.LightSource = game.Circle.extend({
 
         this.parent(x, y, r, settings);
 
-        this.body.shapeList[0].lightsource = true;
+        this.lightsource = true;
     },
 
     "update" : function update() {
@@ -83,13 +83,17 @@ game.LightSource = game.Circle.extend({
         var bb = new cp.BB(x - intensity, p.y - intensity, x + intensity, p.y + intensity);
         space.bbQuery(bb, c.LAYER_SHAPES, 0, function (shape) {
             // FIXME: Support segments
-            if (shape.lightsource ||
+            if (shape.entity.lightsource ||
                 shape.type === "segment") {
                 return;
             }
 
             var shape_p = shape.body.p;
             var shape_rot = shape.body.rot;
+            var shape_entity = shape.entity;
+
+            // Set lightlevel
+            shape_entity.lightlevel += Math.min(Math.max(intensity - cp.v.dist(p, shape_p), 0) / intensity, 1);
 
             // These vars act as outputs (via closure) from the projection functions.
             var angles = [ 0, 0 ],
@@ -268,9 +272,6 @@ game.LightSource = game.Circle.extend({
             backbuffer.lineTo(intensity + corners[1].x + rays[1].x, intensity - corners[1].y - rays[1].y);
             backbuffer.lineTo(intensity + corners[0].x + rays[0].x, intensity - corners[0].y - rays[0].y);
             backbuffer.fill();
-
-            // FIXME: Could potentially use the two corner vertices for highlighting,
-            // if a linear gradient is created across the perpendicular plane between them
         });
 
         // Draw backbuffer to screen

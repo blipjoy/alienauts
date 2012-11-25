@@ -40,7 +40,7 @@ game.PlayScreen = me.ScreenObject.extend({
             -10, -15
         ];
         var poly = new game.Poly(250, c.HEIGHT - 220, verts, cp.vzero, {
-            "color" : "navy"
+            "color" : "dodgerblue"
         });
         me.game.add(poly, 1002);
         me.game.add(new game.Rope(poly.body, space.staticBody, cp.v(-20, 0), cp.v(270, 220), 130), 1000);
@@ -58,7 +58,7 @@ game.PlayScreen = me.ScreenObject.extend({
             "intensity" : 100
         });
         me.game.add(light, 1001);
-        me.game.add(new game.Rope(light.body, space.staticBody, cp.v(-10, 0), cp.v(300, 175), 100, {
+        me.game.add(new game.Rope(light.body, space.staticBody, cp.v(-10, 0), cp.v(400, 175), 100, {
             "mass" : 0.2
         }), 1000);
 
@@ -99,6 +99,6 @@ game.PlayScreen = me.ScreenObject.extend({
 
     // FIXME: Don't clear the BG here
     "draw" : function draw(context) {
-        me.video.clearSurface(context, "#222");
+        me.video.clearSurface(context, "#111");
     }
 });

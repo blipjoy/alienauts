@@ -9,6 +9,7 @@ game.Player = Object.extend({
         shape.setElasticity(0.3);
         shape.setFriction(0.8);
         shape.setLayers(c.LAYER_SHAPES);
+        shape.entity = this;
 
         this.body.p = cp.v(x, c.HEIGHT - y);
         space.addBody(this.body);
@@ -36,6 +37,9 @@ game.Player = Object.extend({
         }
 
         this.lastPressed = pressed;
+
+        // Reset the light level
+        this.lightlevel = 0;
 
         return ((b.vx != 0) || (b.vy != 0));
     },
@@ -70,7 +74,8 @@ game.Player = Object.extend({
     "draw" : function draw(context) {
         var p = this.body.p,
             ticks = this.ticks,
-            step = ticks * 0.1;
+            step = ticks * 0.1,
+            lightlevel = Math.max(this.lightlevel, 0.1);
 
         this.ticks++;
 
@@ -134,7 +139,7 @@ game.Player = Object.extend({
         // Draw saucer body
         context.lineWidth = 1;
         context.strokeStyle = "black";
-        context.fillStyle = "#444";
+        context.fillStyle = game.getColor(game.darkenColor([ 0x66, 0x66, 0x66 ], lightlevel));
         context.rotate(wobble);
         ellipse(0, 0, 50, 25 + stretch);
 
@@ -151,7 +156,7 @@ game.Player = Object.extend({
 
 
         // Draw dome
-        context.fillStyle = "#666";
+        context.fillStyle = game.getColor(game.darkenColor([ 0x88, 0x88, 0x88 ], lightlevel));
         context.beginPath();
         context.moveTo(-12.5, 0);
         context.arc(0, 0, 12.5, Math.PI, 0);

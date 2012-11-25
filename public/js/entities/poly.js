@@ -23,6 +23,7 @@ game.Poly = Object.extend({
         shape.setFriction(settings.friction);
         shape.setLayers(c.LAYER_SHAPES);
         shape.group = settings.group;
+        shape.entity = this;
 
         b.p = cp.v(x, c.HEIGHT - y);
         space.addBody(b);
@@ -31,13 +32,17 @@ game.Poly = Object.extend({
     "update" : function update() {
         var b = this.body;
 
+        // Reset the light level
+        this.lightlevel = 0;
+
         return ((b.vx != 0) || (b.vy != 0));
     },
 
     "draw" : function draw(context) {
         var body = this.body,
             p = body.p,
-            verts = body.shapeList[0].verts;
+            verts = body.shapeList[0].verts,
+            lightlevel = Math.max(this.lightlevel, 0.1);
 
         context.save();
 
@@ -54,7 +59,7 @@ game.Poly = Object.extend({
 
         context.closePath();
 
-        context.fillStyle = game.getColor(this.color);
+        context.fillStyle = game.getColor(game.darkenColor(game.parseColor(this.color), lightlevel));
         context.fill();
 
         context.strokeStyle = "black";

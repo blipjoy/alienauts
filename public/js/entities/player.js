@@ -75,27 +75,33 @@ game.Player = Object.extend({
         this.ticks++;
 
 
-        function ellipse(cx, cy, w, h) {
+        function ellipse(x, y, w, h) {
             context.beginPath();
-            var lx = cx - w / 2,
-                rx = cx + w / 2,
-                ty = cy - h / 2,
-                by = cy + h / 2;
+            var hw = w / 2,
+                hh = h / 2,
+                lx = x - hw,
+                rx = x + hw,
+                ty = y - hh,
+                by = y + hh;
 
-            var magic = 0.551784;
-            var xmagic = magic * w / 2;
-            var ymagic = magic * h / 2;
+            var xmagic = hw * 0.551784,
+                ymagic = hh * 0.551784,
+                xmin = x - xmagic,
+                xmax = x + xmagic,
+                ymin = y - ymagic,
+                ymax = y + ymagic;
 
-            context.moveTo(cx, ty);
-            context.bezierCurveTo(cx + xmagic, ty, rx, cy - ymagic, rx, cy);
-            context.bezierCurveTo(rx, cy + ymagic, cx + xmagic, by, cx, by);
-            context.bezierCurveTo(cx - xmagic, by, lx, cy + ymagic, lx, cy);
-            context.bezierCurveTo(lx, cy - ymagic, cx - xmagic, ty, cx, ty);
+            context.moveTo(x, ty);
+            context.bezierCurveTo(xmax, ty, rx, ymin, rx, y);
+            context.bezierCurveTo(rx, ymax, xmax, by, x, by);
+            context.bezierCurveTo(xmin, by, lx, ymax, lx, y);
+            context.bezierCurveTo(lx, ymin, xmin, ty, x, ty);
             context.fill();
             context.stroke();
         }
 
 
+        // Animation
         var wobble = Math.cos(step) * (Math.PI / 25),
             stretch = Math.sin(step) * 5;
 
@@ -134,9 +140,12 @@ game.Player = Object.extend({
 
 
         // Draw rotating line
+        var x = Math.cos(step) * 25,
+            y = Math.sin(step) * 12.5 + Math.abs(stretch / 2);
+
         context.beginPath();
-        context.moveTo(-Math.cos(step) * 25, -Math.sin(step) * 12.5 - Math.abs(stretch / 2));
-        context.lineTo(Math.cos(step) * 25, Math.sin(step) * 12.5 + Math.abs(stretch / 2));
+        context.moveTo(-x, -y);
+        context.lineTo(x, y);
         context.fill();
         context.stroke();
 

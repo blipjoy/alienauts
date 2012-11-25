@@ -65,7 +65,9 @@ game.PlayScreen = me.ScreenObject.extend({
         // A second linesource is constrained to the wall.
         light = new game.LightSource(200, c.HEIGHT - 80, 10, {
             "brightness" : 0.25,
-            "intensity" : 100
+            "intensity" : 100,
+            "off" : true,
+            "flickering" : true
         });
         me.game.add(light, 1001);
         space.addConstraint(new cp.PivotJoint(light.body, space.staticBody, cp.vzero, cp.v(200, 80)));

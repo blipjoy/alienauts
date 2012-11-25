@@ -5,22 +5,49 @@ game.LightSource = game.Circle.extend({
         settings.brightness = settings.brightness || 0.8; // Gradient ratio
         settings.color = settings.color || [ 255, 255, 224 ];
         settings.mass = settings.mass || 0.2;
+        settings.off = settings.off || false;
+        settings.flickering = settings.flickering || false;
 
         this.settings = settings;
 
-        var self = this;
+        var i = settings.intensity,
+            i2 = i * 2;
+
         // FIXME: Call this function every time the browser resizes
         function createCanvas() {
             var canvas = document.createElement("canvas");
-            var i2 = settings.intensity * 2;
             canvas.width = i2;
             canvas.height = i2;
 
-            self.backbuffer = canvas.getContext("2d");
+            return canvas.getContext("2d");
         }
-        createCanvas();
+
+        this.backbuffer = createCanvas();
+        this.backbuffer.fillStyle = "black";
+
+        // FIXME: Render beams (like from a flashlight or lamp with a shade)
+        // Should be possible with a clipping region
+
+        // Render a radial beam of light
+        this.gradial = createCanvas();
+        var gradial = this.gradial.createRadialGradient(i, i, r * 1.5, i, i, i);
+        gradial.addColorStop(0, game.getColor(settings.color, settings.brightness));
+        gradial.addColorStop(1, game.getColor(settings.color, 0));
+
+        this.gradial.fillStyle = gradial;
+        this.gradial.fillRect(0, 0, i2, i2);
 
         this.parent(x, y, r, settings);
+    },
+
+    "update" : function update() {
+        // Flickering light
+        var settings = this.settings;
+        if (settings.flickering && !Math.floor(Math.random() * 10)) {
+            this.settings.off = !settings.off;
+        }
+
+        return this.parent();
     },
 
     "draw" : function draw(context) {
@@ -36,24 +63,19 @@ game.LightSource = game.Circle.extend({
             i2 = intensity * 2,
             backbuffer = this.backbuffer;
 
+        if (settings.off) {
+            this.color = "rgba(0, 0, 0, 0)";
+            return this.parent(context);
+        }
+
+        this.color = settings.color;
 
         // Clear backbuffer
         backbuffer.globalCompositeOperation = "copy";
-
-        // FIXME: Render beams (like from a flashlight or lamp with a shade)
-        // Should be possible with a clipping region
-
-        // Render a radial beam of light
-        var gradial = backbuffer.createRadialGradient(intensity, intensity, r * 1.5, intensity, intensity, intensity);
-        gradial.addColorStop(0, game.getColor(settings.color, settings.brightness));
-        gradial.addColorStop(1, game.getColor(settings.color, 0));
-
-        backbuffer.fillStyle = gradial;
-        backbuffer.fillRect(0, 0, i2, i2);
+        backbuffer.drawImage(this.gradial.canvas, 0, 0);
 
         // Render shadows as subtractive polygons
         backbuffer.globalCompositeOperation = "destination-out";
-        backbuffer.fillStyle = "black";
 
         // Draw shadows for every polygon shape within the intensity radius
         var bb = new cp.BB(x - intensity, p.y - intensity, x + intensity, p.y + intensity);
@@ -253,6 +275,6 @@ game.LightSource = game.Circle.extend({
         context.drawImage(backbuffer.canvas, x - intensity, y - intensity);
 
         // Draw bulb
-        this.parent(context);
+        return this.parent(context);
     }
 });

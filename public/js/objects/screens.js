@@ -30,7 +30,7 @@ game.PlayScreen = me.ScreenObject.extend({
         me.input.registerMouseEvent("touchend", vp, game.player.touchEnd.bind(game.player), true);
 
 
-        // Create a funky polygon
+        // Create a funky polygon swinging from a rope.
         var verts = [
             -20, 0,
             -13, 15,
@@ -45,17 +45,24 @@ game.PlayScreen = me.ScreenObject.extend({
         me.game.add(poly, 1002);
         me.game.add(new game.Rope(poly.body, space.staticBody, cp.v(-20, 0), cp.v(270, 220), 130), 1000);
 
+        // Create a circle swinging from a rope.
+        var circle = new game.Circle(350, c.HEIGHT - 100, 15, {
+            "color" : "indigo"
+        });
+        me.game.add(circle, 1002);
+        me.game.add(new game.Rope(circle.body, space.staticBody, cp.v(0, 15), cp.v(330, 135), 70), 1000);
+
         // Create a lightsource swinging from a rope.
         var light = new game.LightSource(415, c.HEIGHT - 140, 10, {
             "brightness" : 0.25,
             "intensity" : 100
         });
         me.game.add(light, 1001);
-        me.game.add(new game.Rope(light.body, space.staticBody, cp.v(-10, 0), cp.v(300, 165), 100, {
-            "mass" : 0.1
+        me.game.add(new game.Rope(light.body, space.staticBody, cp.v(-10, 0), cp.v(300, 175), 100, {
+            "mass" : 0.2
         }), 1000);
 
-
+        // A second linesource is constrained to the wall.
         light = new game.LightSource(200, c.HEIGHT - 80, 10, {
             "brightness" : 0.25,
             "intensity" : 100

@@ -58,85 +58,173 @@ game.LightSource = game.Circle.extend({
         // Draw shadows for every polygon shape within the intensity radius
         var bb = new cp.BB(x - intensity, p.y - intensity, x + intensity, p.y + intensity);
         space.bbQuery(bb, c.LAYER_SHAPES, 0, function (shape) {
-            // FIXME: Support segments and circles
-            if (shape === body.shapeList[0] || shape.type !== "poly") {
+            // FIXME: Support segments
+            // FIXME: Light bulbs should not cast shadows. ;)
+            if (shape === body.shapeList[0] || shape.type === "segment") {
                 return;
             }
 
             var shape_p = shape.body.p;
-            var verts = shape.verts;
-            var test_min = 0,
-                test_max = 0;
+            var shape_rot = shape.body.rot;
 
-            // Rotation vector to apply to all vertex angles
-            var rot = cp.v(1, 0);
-
-            // Get the general angle of the light beam that is approaching the shape
-            var vector = cp.v.toangle(cp.v.sub(p, shape_p));
-            var half_pi = Math.PI / 2;
-            if ((vector > -half_pi) && (vector < half_pi)) {
-                // Rotate all vertex angles by 180 degrees
-                // This fixes problems with comparing angles that underflow/overflow the -Pi..Pi range
-                rot = cp.v(-1, 0);
-            }
+            // These vars act as outputs (via closure) from the projection functions.
+            var angles = [ 0, 0 ],
+                corners = [ cp.vzero, cp.vzero ],
+                axis = cp.vzero;
 
 
-            // Get the position of the vertex (in world coordinates)
-            var vertex = cp.v.rotate(shape.body.rot, cp.v(verts[0], verts[1])).add(shape_p);
+            function projectionFromPoly() {
+                var verts = shape.verts;
+                var test_min = 0,
+                    test_max = 0,
+                    test_axis = cp.vzero;
 
-            // Create an axis vector between lightsource center and vertex
-            var axis = cp.v.sub(vertex, p);
+                // Rotation vector to apply to all vertex angles
+                var fix = cp.v(1, 0);
 
-            // Get the tangent angle to calculate the tangent lines of the lightsource
-            var ratio = rsq / cp.v.lengthsq(axis);
-            var tangent = Math.acos(ratio);
-            // And the angle on the vertex for the tangent line
-            var theta = Math.asin(ratio);
-
-            // Record the min and max angles
-            var direction = cp.v.toangle(cp.v.rotate(rot, axis));
-            var min = direction + theta;
-            var max = direction - theta;
-
-            var angles = [ -tangent, tangent ];
-            var corners = [ vertex, vertex ];
-            var axes = [ axis, axis ];
+                // Get the general angle of the light beam that is approaching the shape
+                var vector = cp.v.toangle(cp.v.sub(p, shape_p));
+                var half_pi = Math.PI / 2;
+                if ((vector > -half_pi) && (vector < half_pi)) {
+                    // Rotate all vertex angles by 180 degrees
+                    // This fixes problems with comparing angles that underflow/overflow the -Pi..Pi range
+                    fix = cp.v(-1, 0);
+                }
 
 
-            // Iterate the rest of the vectors to find the min and max projection lengths
-            var len = verts.length;
-            for (var i = 2; i < len; i += 2) {
-                vertex = cp.v.rotate(shape.body.rot, cp.v(verts[i], verts[i + 1])).add(shape_p);
+                // Get the position of the vertex (in world coordinates)
+                var vertex = cp.v.rotate(shape_rot, cp.v(verts[0], verts[1])).add(shape_p);
+
+                // Create an axis vector between lightsource center and vertex
                 axis = cp.v.sub(vertex, p);
 
-                ratio = rsq / cp.v.lengthsq(axis);
-                tangent = Math.acos(ratio);
-                theta = Math.asin(ratio);
+                // Get the tangent angle to calculate the tangent lines of the lightsource
+                var ratio = rsq / cp.v.lengthsq(axis);
+                var tangent = Math.acos(ratio);
+                // And the angle on the vertex for the tangent line
+                var theta = Math.asin(ratio);
 
-                direction = cp.v.toangle(cp.v.rotate(rot, axis));
-                test_min = direction + theta;
-                test_max = direction - theta;
+                // Record the min and max angles
+                var direction = cp.v.toangle(cp.v.rotate(fix, axis));
+                var min = direction + theta;
+                var max = direction - theta;
+
+                angles = [ -tangent, tangent ];
+                corners = [ vertex, vertex ];
 
 
-                if (test_min < min) {
-                    min = test_min;
-                    angles[0] = -tangent;
-                    corners[0] = vertex;
-                    axes[0] = axis;
-                }
-                if (test_max > max) {
-                    max = test_max;
-                    angles[1] = tangent;
-                    corners[1] = vertex;
-                    axes[1] = axis;
+                // Iterate the rest of the vertices to find the min and max projection lengths
+                var len = verts.length;
+                for (var i = 2; i < len; i += 2) {
+                    vertex = cp.v.rotate(shape_rot, cp.v(verts[i], verts[i + 1])).add(shape_p);
+                    test_axis = cp.v.sub(vertex, p);
+
+                    ratio = rsq / cp.v.lengthsq(test_axis);
+                    tangent = Math.acos(ratio);
+                    theta = Math.asin(ratio);
+
+                    direction = cp.v.toangle(cp.v.rotate(fix, test_axis));
+                    test_min = direction + theta;
+                    test_max = direction - theta;
+
+
+                    if (test_min < min) {
+                        min = test_min;
+                        angles[0] = -tangent;
+                        corners[0] = vertex;
+                        axis = test_axis;
+                    }
+                    if (test_max > max) {
+                        max = test_max;
+                        angles[1] = tangent;
+                        corners[1] = vertex;
+                        axis = test_axis;
+                    }
                 }
             }
 
 
+            function projectionFromCircle() {
+                // Get r^2 for circle, which will help calculate the tangent lines
+                var sr = shape.r;
+                var srsq = sr * sr;
+
+                var vr = [
+                    cp.v(0, sr),
+                    cp.v(0, -sr)
+                ];
+
+                // Create an axis vector between lightsource center and circle center
+                axis = cp.v.sub(shape_p, p);
+
+                // rotation vector
+                var direction = cp.v.normalize(axis);
+
+                // Get the tangent angle to calculate the tangent lines of the lightsource
+                var ratio = (srsq - rsq) / cp.v.lengthsq(axis);
+                var tangent = Math.acos(ratio);
+                // And the angle on the vertex for the tangent line
+                var theta = Math.asin(ratio);
+
+                // Set outputs
+                angles = [ tangent, -tangent ];
+                corners = [
+                    cp.v.rotate(direction, cp.v.rotate(cp.v.forangle(theta), vr[0])).add(shape_p),
+                    cp.v.rotate(direction, cp.v.rotate(cp.v.forangle(-theta), vr[1])).add(shape_p)
+                ];
+            }
+
+
+            // get projection vertices
+            switch (shape.type) {
+                case "circle":
+                    projectionFromCircle();
+
+                    // Fill circle
+                    var pos = cp.v.sub(shape_p, p);
+                    pos.x += intensity;
+                    pos.y = intensity - pos.y;
+
+                    backbuffer.beginPath();
+                    backbuffer.moveTo(pos.x + shape.r, pos.y);
+                    backbuffer.arc(pos.x, pos.y, shape.r, 0, Math.PI * 2);
+                    backbuffer.fill();
+                    break;
+
+                case "poly":
+                    projectionFromPoly();
+
+                    // Fill poly
+                    var verts = shape.verts;
+                    backbuffer.save();
+
+                    backbuffer.translate(intensity + shape_p.x - p.x, intensity - shape_p.y + p.y);
+                    backbuffer.rotate(-shape.body.a);
+
+                    backbuffer.beginPath();
+                    backbuffer.moveTo(verts[0], -verts[1]);
+
+                    var len = verts.length;
+                    for (var i = 2; i < len; i += 2) {
+                        backbuffer.lineTo(verts[i], -verts[i + 1]);
+                    }
+
+                    backbuffer.closePath();
+                    backbuffer.fill();
+
+                    backbuffer.restore();
+
+                    break;
+
+                case "segment":
+                    break;
+            }
+
             // Get the tangent line endpoints in world coordinates
+            axis = cp.v.normalize(axis);
             var tangents = [
-                cp.v.rotate(cp.v.forangle(angles[0]), cp.v.normalize(axes[0])).mult(r),
-                cp.v.rotate(cp.v.forangle(angles[1]), cp.v.normalize(axes[1])).mult(r)
+                cp.v.rotate(cp.v.forangle(angles[0]), axis).mult(r),
+                cp.v.rotate(cp.v.forangle(angles[1]), axis).mult(r)
             ];
 
             corners[0].sub(p);

@@ -35,21 +35,21 @@ game.Poly = Object.extend({
     },
 
     "draw" : function draw(context) {
-        var b = this.body,
-            p = b.p,
-            v = b.shapeList[0].verts;
+        var body = this.body,
+            p = body.p,
+            verts = body.shapeList[0].verts;
 
         context.save();
 
         context.translate(p.x, c.HEIGHT - p.y);
-        context.rotate(-b.a);
+        context.rotate(-body.a);
 
         context.beginPath();
-        context.moveTo(v[0], -v[1]);
+        context.moveTo(verts[0], -verts[1]);
 
-        var len = v.length;
+        var len = verts.length;
         for (var i = 2; i < len; i += 2) {
-            context.lineTo(v[i], -v[i + 1]);
+            context.lineTo(verts[i], -verts[i + 1]);
         }
 
         context.closePath();

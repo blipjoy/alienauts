@@ -38,6 +38,8 @@ game.LightSource = game.Circle.extend({
         this.gradial.fillRect(0, 0, i2, i2);
 
         this.parent(x, y, r, settings);
+
+        this.body.shapeList[0].lightsource = true;
     },
 
     "update" : function update() {
@@ -81,8 +83,8 @@ game.LightSource = game.Circle.extend({
         var bb = new cp.BB(x - intensity, p.y - intensity, x + intensity, p.y + intensity);
         space.bbQuery(bb, c.LAYER_SHAPES, 0, function (shape) {
             // FIXME: Support segments
-            // FIXME: Light bulbs should not cast shadows. ;)
-            if (shape === body.shapeList[0] || shape.type === "segment") {
+            if (shape.lightsource ||
+                shape.type === "segment") {
                 return;
             }
 

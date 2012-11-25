@@ -46,11 +46,11 @@ game.PlayScreen = me.ScreenObject.extend({
         me.game.add(new game.Rope(poly.body, space.staticBody, cp.v(-20, 0), cp.v(270, 220), 130), 1000);
 
         // Create a circle swinging from a rope.
-        var circle = new game.Circle(350, c.HEIGHT - 100, 15, {
+        var circle = new game.Circle(350, c.HEIGHT - 100, 20, {
             "color" : "indigo"
         });
         me.game.add(circle, 1002);
-        me.game.add(new game.Rope(circle.body, space.staticBody, cp.v(0, 15), cp.v(330, 135), 70), 1000);
+        me.game.add(new game.Rope(circle.body, space.staticBody, cp.v(0, 20), cp.v(330, 135), 70), 1000);
 
         // Create a lightsource swinging from a rope.
         var light = new game.LightSource(415, c.HEIGHT - 140, 10, {

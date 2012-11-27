@@ -75,7 +75,7 @@ game.Player = Object.extend({
         var p = this.body.p,
             ticks = this.ticks,
             step = ticks * 0.1,
-            lightlevel = Math.max(this.lightlevel, 0.1);
+            lightlevel = Math.max(this.lightlevel, game.scene.lightlevel);
 
         this.ticks++;
 

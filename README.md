@@ -1,64 +1,96 @@
-Here at GitHub, we're no strangers to hosting or sponsoring hackathons. With the growing number of games and game development resources on GitHub, we thought it was about time to throw our very own game jam!
+# Alienauts
 
-## The Challenge
+A 2D physics puzzle-adventure.
 
-You have the entire month of November to create a **web-based** game *loosely* built around one or more of the following themes:
+## Back story
 
-* forking (or forks)
-* branching (or branches)
-* cloning (or clones)
-* pushing
-* pulling
+### Roswell, NM 1947.
 
-What do we mean by **loosely** based on these concepts? We literally mean, *loosely* based. Some examples might be a FPS where you throw forks at water balloons, an educational game about DNA cloning, or perhaps a platformer where you push and pull objects.
+A high-altitude surveillance balloon crashes onto a ranch.  Initial reports
+indicate it is a flying saucer with a crew of three small "human-shaped" beings
+with large heads and eyes.  The wreckage is said to be transported to the
+Nevada desert at a top-secret military base known to the general public as
+"Area-51".
 
-Your game. Your rules. You can participate as an individual or as a team. You're encouraged to use open source libraries, frameworks, graphics, and sounds.
+No evidence exists to verify these claims.
 
-## Prizes
+### Vicinity of Southern California, USA circa 2012
 
-We have 5 shiny new iPads with Retina displays (64GB wifi models) to give to our winners (or Apple Store Credit equivalent). Runners up will receive GitHub swag of their choice ($100 credit for the [GitHub Shop](http://shop.github.com/)). If you have a team submission, we'll give you Apple Store credit equal to the value of the iPad. You can split it with your teammates as appropriate.
+A recently "lost" communications satellite falls from the night sky in a
+spectacular display to the desert floor below.  Conspiracy theorists and public
+imagination spark stories of an alien craft shot down by the US Air Force and
+taken to a decommissioned secret nuclear bunker.  Some claim that two humanoid
+creatures were found alive in the wreckage.
 
-All of the winners and runners up will be showcased on our blog.
+The only evidence available are photos of a metallic debris and the temporary
+loss of TV service to much of the southwestern United States.
 
-<img src="http://i.imgur.com/lxZrD.png" style="border:0;">
+## About
 
-### Everyone's a winner!
+Play as one of the stranded alien survivors, attempting to outsmart the lab
+coats as they keep a keen watch on your every move.  The scientists studying you
+are most interested in your escape pod's ability to create a temporary but exact
+replica of certain materials.
 
-All participants will receive a limited edition [Coderwall](http://www.coderwall.com) badge as shown above. Winners and runners up will also get their own special version of it.
+Recognizing your small stature and fragility in Earth's environment, they allow
+you to pilot the small escape pod through various tests designed to evaluate
+cognitive ability.  You feel very much like a mouse in a maze.
 
-## Judging
+The tests start out easy, and become progressively more challenging.  All the
+while, you are searching for a way to escape the facility; you are piloting an
+escape pod, after all.
 
-We have a number of awesome judges who graciously volunteered to take a look at all the entries!
+However, the escape pod has very limited range of motion in Earth's atmosphere.
+Even its most powerful propellant beam is only enough for a short hover.  The
+escape pod's light weight also makes it extremely sensitive to turbulence, and
+generally unstable while maintaining flight.
 
-* [David Czarnecki](http://twitter.com/CzarneckiD), Lead Engineer at Agora Games
-* [Eric Preisz](https://twitter.com/epreisz), CEO of GarageGames
-* [Matt Hackett](https://twitter.com/#!/richtaur), Co-founder of Lost Decade Games
-* [Lee Reilly](http://twitter.com/leereilly), Gamer Dad and Software Developer at GitHub
-* [Romana Ramzan](https://twitter.com/Manak/), Denki's Player Champion. PhD Researcher. Organiser of Scottish Game Jam.
+Cloned items created by the escape pod phase out of existence after a brief
+period, roughly 10 seconds.  This is your most valuable tool for getting around
+effectively; clone a handful of balloons to lift your escape pod, or clone some
+rocks for a little extra weight.  Use the environment to your advantage.
 
-## Rules
+## Controls
 
-* To qualify for entry as an **individual** you must fork the [github/game-off-2012](https://github.com/github/game-off-2012) repository to your individual account
-* To qualify for entry as a **team** you must fork the [github/game-off-2012](https://github.com/github/game-off-2012) to a [free organization account](https://github.com/settings/organizations)
-* All entries must be web-based i.e. playable in a browser. HTML5, WebGL, Unity, Torque 3D, Node JS, Flash is all possible - just be sure the source is made available on your fork.
-* You must be over the age of 13
+[TODO]
 
-## Instructions
+## Play Online
 
-* If you don't already have a GitHub account, [sign up now](https://github.com/signup/free) - it's free!
-* Fork the [github/game-off-2012](https://github.com/github/game-off-2012) repository to your individual account (or to a free organization account)
-* Be sure to follow @github on Twitter for updates
-* Make sure your code is pushed to the master branch of before Dec 1st!
-* Make sure you have a README file with a brief description, what open source projects (if any) you used, and a screenshot.
-* Your repo should have a brief description and a URL where the game is playable entered into the fields shown below (this will make our judging process easier):
+[On Github](http://blipjoy.github.com/game-off-2012/public/index.html)
 
-![](https://img.skitch.com/20121010-x2ecpu95fi91us6hbfehg2dgit.png)
+## Develop
 
-Winners will be announced before Christmas :santa:
+  $ git clone https://github.com/Blipjoy/game-off-2012.git
 
-# Comments / Questions / Help
+### Dependencies
 
-* New to Git, GitHub, and/or version control? Check out our [help documentation](https://help.github.com/) to get started!
-* Questions about Git/GitHub? Please email support@github.com and be sure to include 'GitHub Game Off' in the subject.
-* Questions specific to the GitHub Game Off? Please [create an issue](https://github.com/github/game-off-2012/issues/new). That will be the offical FAQ.
-* The official Twitter hashtag is [#ggo12](https://twitter.com/search/realtime?q=%23ggo12).
+The source ships with the following libraries:
+
+* [melonJS](http://www.melonjs.org/) - Lightweight HTML5 game engine
+* [Chipmunk-js](https://github.com/josephg/Chipmunk-js) - JavaScript port of the
+Chipmunk 2D physics engine
+
+### License
+
+The source code is hereby released under the MIT License. The full text
+of the license appears below.
+
+Copyright (c) 2012 Jason Oster
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of
+this software and associated documentation files (the "Software"), to deal in
+the Software without restriction, including without limitation the rights to
+use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
+the Software, and to permit persons to whom the Software is furnished to do so,
+subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.

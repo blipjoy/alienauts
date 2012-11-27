@@ -90,3 +90,12 @@ me.sys.useNativeAnimFrame = true; // Be fast!
 //me.debug.renderHitBox = true;
 //me.debug.renderCollisionMap = true;
 me.sys.stopOnAudioError = false;
+
+// Game states.
+me.state.SCENE00 = me.state.USER + 0;
+me.state.SCENE01 = me.state.USER + 1;
+me.state.SCENE02 = me.state.USER + 2;
+me.state.SCENE03 = me.state.USER + 3;
+
+me.state.BLIPJOY = me.state.USER + 20;
+me.state.INTRO = me.state.USER + 21;

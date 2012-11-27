@@ -59,7 +59,7 @@ game.LightSource = game.Circle.extend({
             x = p.x,
             y = c.HEIGHT - p.y,
             r = this.r,
-            rsq = r * r;
+            rsq = r * r,
             settings = this.settings,
             intensity = settings.intensity,
             i2 = intensity * 2,
@@ -93,7 +93,7 @@ game.LightSource = game.Circle.extend({
             var shape_entity = shape.entity;
 
             // Set lightlevel
-            shape_entity.lightlevel += Math.min(Math.max(intensity - cp.v.dist(p, shape_p), 0) / intensity, 1);
+            shape_entity.lightlevel += Math.min(Math.max(intensity - cp.v.dist(p, shape_p) + r * 3, 0) / intensity, 1);
 
             // These vars act as outputs (via closure) from the projection functions.
             var angles = [ 0, 0 ],

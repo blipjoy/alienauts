@@ -3,7 +3,7 @@ game.Rope = Object.extend({
         settings = settings || {};
 
         // Default settings
-        settings.color = settings.color || "#1C0C06";
+        settings.color = settings.color || "#41290E";
         settings.mass = (settings.mass || 1) / 2;
 
         var space = cm.getSpace();
@@ -88,7 +88,8 @@ game.Rope = Object.extend({
         context.lineWidth = 5;
         context.stroke();
 
-        context.strokeStyle = game.getColor(this.color);
+        var color = game.darkenColor(this.color, Math.max(game.scene.lightlevel, 0.25));
+        context.strokeStyle = game.getColor(color);
         context.lineWidth = 3;
         context.stroke();
 

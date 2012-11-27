@@ -1,6 +1,7 @@
 game.resources = {
     /* Graphics. */
     "img" : [
+        "blipjoy"
     ],
 
     /* Maps from Tiled. */

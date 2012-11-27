@@ -56,7 +56,7 @@ game.Circle = me.Rect.extend({
     "draw" : function draw(context) {
         var b = this.body,
             p = b.p,
-            lightlevel = Math.max(this.lightlevel, 0.1);
+            lightlevel = Math.max(this.lightlevel, game.scene.lightlevel);
 
         context.save();
 
@@ -68,7 +68,7 @@ game.Circle = me.Rect.extend({
         context.lineTo(this.r, 0);
         context.arc(0, 0, this.r, 0, Math.PI * 2);
 
-        context.fillStyle = game.getColor(game.darkenColor(game.parseColor(this.color), lightlevel));
+        context.fillStyle = game.getColor(game.darkenColor(this.color, lightlevel));
         context.fill();
 
         context.strokeStyle = "black";

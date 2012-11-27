@@ -42,7 +42,7 @@ game.Poly = Object.extend({
         var body = this.body,
             p = body.p,
             verts = body.shapeList[0].verts,
-            lightlevel = Math.max(this.lightlevel, 0.1);
+            lightlevel = Math.max(this.lightlevel, game.scene.lightlevel);
 
         context.save();
 
@@ -59,7 +59,7 @@ game.Poly = Object.extend({
 
         context.closePath();
 
-        context.fillStyle = game.getColor(game.darkenColor(game.parseColor(this.color), lightlevel));
+        context.fillStyle = game.getColor(game.darkenColor(this.color, lightlevel));
         context.fill();
 
         context.strokeStyle = "black";

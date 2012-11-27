@@ -8,6 +8,7 @@ var game = {
             alert("Your browser does not support HTML5 canvas.");
             return;
         }
+        me.video.setImageSmoothing(false);
 
         // Initialize the audio.
         me.audio.init("mp3,ogg");
@@ -72,19 +73,18 @@ var game = {
 
     // Run on game resources loaded.
     "loaded" : function loaded() {
-        // Set the "Select" ScreenObject.
-        //me.state.set(me.state.MENU, new game.SelectScreen());
+        // Set the ScreenObjects for game state management.
+        me.state.set(me.state.BLIPJOY, new game.BlipjoyScreen(true));
 
-        // Set the "Play" ScreenObject.
-        // FIXME: Don't create PlayScreen as an object
-        me.state.set(me.state.PLAY, new game.PlayScreen(true));
-
-        // Entities.
-        //me.entityPool.add("truck", game.Truck);
-        //me.entityPool.add("plant", game.Plant);
+        me.state.set(me.state.SCENE00, new game.Scene00(true));
+        /*
+        me.state.set(me.state.SCENE01, new game.Scene01(true));
+        me.state.set(me.state.SCENE02, new game.Scene02(true));
+        me.state.set(me.state.SCENE03, new game.Scene03(true));
+        */
 
         // Start the game.
-        me.state.change(me.state.PLAY);
+        me.state.change(me.state.BLIPJOY);
     },
 
     // Helper function to determine if a variable is an Object.
@@ -107,10 +107,10 @@ var game = {
         return (a + b) / 2;
     },
 
+    // Blend two color values using addition.
     "addColor" : function addColor(a, b) {
-        if (!Array.isArray(a)) {
-            return a;
-        }
+        a = game.parseColor(a);
+        b = game.parseColor(b);
 
         return [
             Math.min(a[0] + b[0], 255),
@@ -119,15 +119,14 @@ var game = {
         ];
     },
 
-    "darkenColor" : function darkenColor(a, scale) {
-        if (!Array.isArray(a)) {
-            return a;
-        }
+    // Darken a color value by 0..1
+    "darkenColor" : function darkenColor(color, scale) {
+        color = game.parseColor(color);
 
         return [
-            Math.min(Math.round(a[0] * scale), 255),
-            Math.min(Math.round(a[1] * scale), 255),
-            Math.min(Math.round(a[2] * scale), 255)
+            Math.min(Math.round(color[0] * scale), 255),
+            Math.min(Math.round(color[1] * scale), 255),
+            Math.min(Math.round(color[2] * scale), 255)
         ];
     },
 
@@ -135,6 +134,10 @@ var game = {
 
     // Parse a CSS color and cache the result, returns an array of RGB values.
     "parseColor" : function parseColor(color) {
+        if (Array.isArray(color)) {
+            return color;
+        }
+
         var rgb = this.rgbCache[color];
 
         if (!rgb) {

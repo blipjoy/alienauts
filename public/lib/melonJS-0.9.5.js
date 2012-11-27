@@ -40,7 +40,7 @@ var me = me || {};
 		entityPool : null,
 		levelDirector : null,
 		// System Object (instances)
-		XMLParser : null,
+		TMXParser : null,
 		loadingScreen : null,
 		// TMX Stuff
 		TMXTileMap : null
@@ -728,38 +728,46 @@ var me = me || {};
 	/************************************************************************************/
 
 	/**
-	 * a basic XML Parser
+	 * a basic TMX/TSX Parser
 	 * @class
 	 * @constructor
 	 * @ignore
 	 **/
-	function _TinyXMLParser() {
+	function _TinyTMXParser() {
 		var parserObj = {
-			xmlDoc : null,
+			tmxDoc : null,
+			isJSON : false,
 
-			// parse a xml from a string (xmlhttpObj.responseText)
-			parseFromString : function(textxml) {
-				// get a reference to the requested corresponding xml file
-				if ($.DOMParser) {
-					var parser = new DOMParser();
-					this.xmlDoc = parser.parseFromString(textxml, "text/xml");
-				} else // Internet Explorer (untested!)
-				{
-					this.xmlDoc = new ActiveXObject("Microsoft.XMLDOM");
-					this.xmlDoc.async = "false";
-					this.xmlDoc.loadXML(textxml);
-				}
-				if (this.xmlDoc == null) {
-					console.log("xml " + this.xmlDoc + " not found!");
+			// parse a TMX/TSX from a string (xmlhttpObj.responseText)
+			parseFromString : function(data, isJSON) {
+				this.isJSON = isJSON || false;
+				
+				if (this.isJSON) {
+					this.tmxDoc = JSON.parse(data);
+					// this won't work !
+				} else {
+					// get a reference to the requested corresponding xml file
+					if ($.DOMParser) {
+						var parser = new DOMParser();
+						this.tmxDoc = parser.parseFromString(data, "text/xml");
+					} else // Internet Explorer (untested!)
+					{
+						this.tmxDoc = new ActiveXObject("Microsoft.XMLDOM");
+						this.tmxDoc.async = "false";
+						this.tmxDoc.loadXML(data);
+					}
+					if (this.tmxDoc == null) {
+						console.log("tmx/tsx " + this.tmxDoc + " not found!");
+					}
 				}
 			},
 
 			getFirstElementByTagName : function(name) {
-				return this.xmlDoc ? this.xmlDoc.getElementsByTagName(name)[0] : null;
+				return this.tmxDoc ? this.tmxDoc.getElementsByTagName(name)[0] : null;
 			},
 
 			getAllTagElements : function() {
-				return this.xmlDoc ? this.xmlDoc.getElementsByTagName('*') : null;
+				return this.tmxDoc ? this.tmxDoc.getElementsByTagName('*') : null;
 			},
 
 			getStringAttribute : function(elt, str, val) {
@@ -784,7 +792,7 @@ var me = me || {};
 
 			// free the allocated parser
 			free : function() {
-				this.xmlDoc = null;
+				this.tmxDoc = null;
 			}
 		}
 		return parserObj;
@@ -821,8 +829,8 @@ var me = me || {};
 		// init the FPS counter if needed
 		me.timer.init();
 
-		// create an instance of the XML parser
-		me.XMLParser = new _TinyXMLParser();
+		// create an instance of the TMX parser
+		me.TMXParser = new _TinyTMXParser();
 
 		// create a default loading screen
 		me.loadingScreen = new me.DefaultLoadingScreen();
@@ -1169,7 +1177,7 @@ var me = me || {};
 				api.viewport = new me.Viewport(0, 0, width, height);
 
 				// get a ref to the screen buffer
-				frameBuffer = me.video.getScreenFrameBuffer();
+				frameBuffer = me.video.getSystemContext();
 
 				// publish init notification
 				me.event.publish(me.event.GAME_INIT);
@@ -1593,7 +1601,7 @@ var me = me || {};
 			{
 				if (obj.inViewport && obj.visible && obj.collidable && obj.isEntity && (obj!=objA))
 				{
-					res = obj.collisionBox.collideVsAABB.call(obj, objA);
+					res = obj.collisionBox.collideVsAABB.call(obj.collisionBox, objA.collisionBox);
 					if (res.x != 0 || res.y != 0) {
 						// notify the object
 						obj.onCollision.call(obj, res, objA);
@@ -2480,8 +2488,8 @@ var me = me || {};
 
 		// contains all the images loaded
 		var imgList = {};
-		// contains all the xml loaded
-		var xmlList = {};
+		// contains all the TMX loaded
+		var tmxList = {};
 		// contains all the binary files loaded
 		var binList = {};
 		// flag to check loading status
@@ -2502,10 +2510,10 @@ var me = me || {};
 			if (loadCount == (resourceCount - tmxCount)) {
 
 				// add all TMX level into the level Director
-				for ( var xmlObj in xmlList) {
-					if (xmlList[xmlObj].isTMX) {
+				for ( var tmxObj in tmxList) {
+					if (tmxList[tmxObj].isTMX) {
 						// load the level into the levelDirector
-						if (me.levelDirector.addTMXLevel(xmlObj)) {
+						if (me.levelDirector.addTMXLevel(tmxObj)) {
 							//progress notification
 							obj.onResourceLoaded();
 						}
@@ -2552,16 +2560,19 @@ var me = me || {};
 		};
 
 		/**
-		 * preload XML files
+		 * preload TMX files
 		 * @private
 		 */
-		function preloadXML(xmlData, onload, onerror) {
+		function preloadTMX(tmxData, onload, onerror) {
 			var xmlhttp = new XMLHttpRequest();
-			// to ensure our document is treated as a XML file
-			if (xmlhttp.overrideMimeType)
-				xmlhttp.overrideMimeType('text/xml');
 			
-			xmlhttp.open("GET", xmlData.src + me.nocache, true);
+			if (me.utils.getFileExtension(tmxData.src).toLowerCase() !== 'json') {
+				// to ensure our document is treated as a XML file
+				if (xmlhttp.overrideMimeType)
+					xmlhttp.overrideMimeType('text/xml');
+			}
+			
+			xmlhttp.open("GET", tmxData.src + me.nocache, true);
 						
 			// set the callbacks
 			xmlhttp.ontimeout = onerror;
@@ -2571,13 +2582,14 @@ var me = me || {};
 					// (With Chrome use "--allow-file-access-from-files --disable-web-security")
 					if ((xmlhttp.status==200) || ((xmlhttp.status==0) && xmlhttp.responseText)){
 						// get the TMX content
-						xmlList[xmlData.name] = {
-							xml: xmlhttp.responseText,
-							isTMX: (xmlData.type === "tmx")
+						tmxList[tmxData.name] = {
+							data: xmlhttp.responseText,
+							isTMX: (tmxData.type === "tmx"),
+							// Sore the data format ('tmx', 'json')
+							type : me.utils.getFileExtension(tmxData.src).toLowerCase()
 						};
 						// fire the callback
 						onload();
-		
 					} else {
 						onerror();
 					}
@@ -2752,7 +2764,7 @@ var me = me || {};
 					return 1;
 
 				case "tmx":
-					preloadXML.call(this, res, onload, onerror);
+					preloadTMX.call(this, res, onload, onerror);
 					// increase the resourceCount by 1
 					// allowing to add the loading of level in the 
 					// levelDirector as part of the loading progress
@@ -2760,7 +2772,7 @@ var me = me || {};
 					return 2;
 
 				case "tsx":
-					preloadXML.call(this, res, onload, onerror);
+					preloadTMX.call(this, res, onload, onerror);
 					return 1;
 
 				case "audio":
@@ -2807,10 +2819,10 @@ var me = me || {};
 
 				case "tmx":
 				case "tsx":
-					if (!(res.name in xmlList))
+					if (!(res.name in tmxList))
 						return false;
 
-					delete xmlList[res.name];
+					delete tmxList[res.name];
 					return true;
 
 				case "audio":
@@ -2839,33 +2851,50 @@ var me = me || {};
 			for (name in imgList)
 				obj.unload(name);
 
-			// unload all xml resources
-			for (name in xmlList)
+			// unload all tmx resources
+			for (name in tmxList)
 				obj.unload(name);
 
 			// unload all audio resources
 			me.audio.unloadAll();
 		};
 
-
 		/**
-		 * return the specified XML object
-		 * @name me.loader#getXML
+		 * return the specified TMX object storing type
+		 * @name me.loader#getTMXFormat
 		 * @public
 		 * @function
-		 * @param {String} xmlfile name of the xml element ("map1");
-		 * @return {Xml} 
+		 * @param {String} tmx name of the tmx/tsx element ("map1");
+		 * @return {String} 'tmx' or 'json'
 		 */
-		obj.getXML = function(elt) {
+		obj.getTMXFormat = function(elt) {
 			// avoid case issue
 			elt = elt.toLowerCase();
-			if (elt in xmlList)
-				return xmlList[elt].xml;
+			if (elt in tmxList)
+				return tmxList[elt].type;
 			else {
 				//console.log ("warning %s resource not yet loaded!",name);
 				return null;
 			}
 
+		};
+		/**
+		 * return the specified TMX/TSX object
+		 * @name me.loader#getTMX
+		 * @public
+		 * @function
+		 * @param {String} tmx name of the tmx/tsx element ("map1");
+		 * @return {TMx} 
+		 */
+		obj.getTMX = function(elt) {
+			// avoid case issue
+			elt = elt.toLowerCase();
+			if (elt in tmxList)
+				return tmxList[elt].data;
+			else {
+				//console.log ("warning %s resource not yet loaded!",name);
+				return null;
+			}
 		};
 		
 		/**
@@ -2958,13 +2987,13 @@ var me = me || {};
 	/*                                                                                  */
 	/************************************************************************************/
 	/**
-	 * a 2D Vector Object
+	 * a generic 2D Vector Object
 	 * @class
 	 * @extends Object
 	 * @memberOf me
 	 * @constructor
-	 * @param {int} x x position of the vector
-	 * @param {int} y y position of the vector
+	 * @param {int} x x value of the vector
+	 * @param {int} y y value of the vector
 	 */
 	me.Vector2d = Object.extend(
 	/** @scope me.Vector2d.prototype */
@@ -2985,46 +3014,76 @@ var me = me || {};
 		y : 0,
 
 		/** @private */
-		init : function(/**Int*/ x, /**Int*/ y) {
+		init : function(/**Number*/ x, /**Number*/ y) {
 			this.x = x || 0;
 			this.y = y || 0;
 		},
-
-		set : function(/**Int*/ x, /**Int*/ y) {
+		
+		/**
+		 * set the Vector x and y properties to the given values<br>
+		 * @param {Number} x
+		 * @param {Number} y
+		 */
+		set : function(x, y) {
 			this.x = x;
 			this.y = y;
 		},
 
+		/**
+		 * set the Vector x and y properties to 0
+		 */
 		setZero : function() {
 			this.set(0, 0);
-
 		},
 
-		setV : function(/**me.Vector2d*/ v) {
+		/**
+		 * set the Vector x and y properties using the passed vector
+		 * @param {me.Vector2d} v
+		 */
+		setV : function(v) {
 			this.x = v.x;
 			this.y = v.y;
 		},
 
-		add : function(/**me.Vector2d*/ v) {
+		/**
+		 * Add the passed vector to this vector
+		 * @param {me.Vector2d} v
+		 */
+		add : function(v) {
 			this.x += v.x;
 			this.y += v.y;
 		},
 
-		sub : function(/**me.Vector2d*/ v) {
+		/**
+		 * Substract the passed vector to this vector
+		 * @param {me.Vector2d} v
+		 */
+		sub : function(v) {
 			this.x -= v.x;
 			this.y -= v.y;
 		},
 
-		scale : function(/**me.Vector2d*/ v) {
+		/**
+		 * Multiply this vector values by the passed vector
+		 * @param {me.Vector2d} v
+		 */
+		scale : function(v) {
 			this.x *= v.x;
 			this.y *= v.y;
 		},
 
-		div : function(/**Int*/	n) {
+		/**
+		 * Divide this vector values by the passed value
+		 * @param {Number} value
+		 */
+		div : function(n) {
 			this.x /= n;
 			this.y /= n;
 		},
 
+		/**
+		 * Update this vector values to absolute values
+		 */
 		abs : function() {
 			if (this.x < 0)
 				this.x = -this.x;
@@ -3032,78 +3091,126 @@ var me = me || {};
 				this.y = -this.y;
 		},
 
-		/** @return {me.Vector2D} */
+		/**
+		 * Clamp the vector value within the specified value range
+		 * @param {Number} low
+		 * @param {Number} high
+		 * @return {me.Vector2d}
+		 */
 		clamp : function(low, high) {
 			return new me.Vector2d(this.x.clamp(low, high), this.y.clamp(low, high));
 		},
 		
+		/**
+		 * Clamp this vector value within the specified value range
+		 * @param {Number} low
+		 * @param {Number} high
+		 */
 		clampSelf : function(low, high) {
 			this.x = this.x.clamp(low, high);
 			this.y = this.y.clamp(low, high);
 			return this;
 		},
 
-		minV : function(/**me.Vector2d*/ v) {
+		/**
+		 * Update this vector with the minimum value between this and the passed vector
+		 * @param {me.Vector2d} v
+		 */
+		minV : function(v) {
 			this.x = this.x < v.x ? this.x : v.x;
 			this.y = this.y < v.y ? this.y : v.y;
 		},
 
-		maxV : function(/**me.Vector2d*/ v) {
+		/**
+		 * Update this vector with the maximum value between this and the passed vector
+		 * @param {me.Vector2d} v
+		 */
+		maxV : function(v) {
 			this.x = this.x > v.x ? this.x : v.x;
 			this.y = this.y > v.y ? this.y : v.y;
 		},
-		
-		/** @return {me.Vector2D} New Vector2d */
+
+		/**
+		 * Floor the vector values
+		 * @return {me.Vector2d}
+		 */
 		floor : function() {
 			return new me.Vector2d(~~this.x, ~~this.y);
 		},
 		
-		/** @return {me.Vector2D} New Vector2d */
+		/**
+		 * Floor this vector values
+		 */
 		floorSelf : function() {
 			this.x = ~~this.x;
 			this.y = ~~this.y;
 			return this;
 		},
 		
-		/** @return {me.Vector2D} New Vector2d */
+		/**
+		 * Ceil the vector values
+		 * @return {me.Vector2d}
+		 */
 		ceil : function() {
 			return new me.Vector2d(Math.ceil(this.x), Math.ceil(this.y));
 		},
 		
-		/** @return {me.Vector2D} New Vector2d */
+		/**
+		 * Ceil this vector values
+		 */
 		ceilSelf : function() {
 			this.x = Math.ceil(this.x);
 			this.y = Math.ceil(this.y);
 			return this;
 		},
 
-		/** @return {me.Vector2D} New Vector2d */
+		/**
+		 * Negate the vector values
+		 * @return {me.Vector2d}
+		 */
 		negate : function() {
 			return new me.Vector2d(-this.x, -this.y);
 		},
 
+		/**
+		 * Negate this vector values
+		 */
 		negateSelf : function() {
 			this.x = -this.x;
 			this.y = -this.y;
 			return this;
 		},
 
-		//copy() copies the x,y values of another instance to this
-		copy : function(/**me.Vector2d*/ v) {
+		/**
+		 * Copy the x,y values of the passed vector to this one
+		 * @param {me.Vector2d} v
+		 */
+		copy : function(v) {
 			this.x = v.x;
 			this.y = v.y;
 		},
 		
-		// return true if two vectors are the same
-		equals : function(/**me.Vector2d*/ v) {
+		/**
+		 * return true if the two vectors are the same
+		 * @param {me.Vector2d} v
+		 * @return {Boolean}
+		 */
+		equals : function(v) {
 			return ((this.x === v.x) && (this.y === v.y));
 		},
 
-		/** @return {int} */
-		length : function() {
+		/**
+		 * return the lenght (magnitude) of this vector
+		 * @return {Number}
+		 */		
+		 length : function() {
 			return Math.sqrt(this.x * this.x + this.y * this.y);
 		},
 
+		/**
+		 * normalize this vector (scale the vector so that its magnitude is 1)
+		 * @return {Number}
+		 */		
 		normalize : function() {
 			var len = this.length();
 			// some limit test
@@ -3116,23 +3223,37 @@ var me = me || {};
 			return len;
 		},
 
-		/** @return {int} */
+		/**
+		 * return the doc product of this vector and the passed one
+		 * @param {me.Vector2d} v
+		 * @return {Number}
+		 */	
 		dotProduct : function(/**me.Vector2d*/ v) {
 			return this.x * v.x + this.y * v.y;
 		},
 
-		/** @return {int} */
-		distance : function(/**me.Vector2d*/ v) {
+		/**
+		 * return the distance between this vector and the passed one
+		 * @param {me.Vector2d} v
+		 * @return {Number}
+		 */			
+		 distance : function(v) {
 			return Math.sqrt((this.x - v.x) * (this.x - v.x) + (this.y - v.y) * (this.y - v.y));
 		},
 
-		/** @return {me.Vector2d} */
+		/**
+		 * return a clone copy of this vector
+		 * @return {me.Vector2d}
+		 */			
 		clone : function() {
 			return new me.Vector2d(this.x, this.y);
 		},
 
-		/** @return {String} */
-		toString : function() {
+		/**
+		 * convert the object to a string representation
+		 * @return {String}
+		 */			
+		 toString : function() {
 			return 'x:' + this.x + 'y:' + this.y;
 		}
 
@@ -3652,8 +3773,8 @@ var me = me || {};
 			
 			// some internal string/length
 			this.help_str	  = "(s)how/(h)ide";
-			this.help_str_len = this.font.measureText(me.video.getScreenFrameBuffer(), this.help_str).width;
-			this.fps_str_len = this.font.measureText(me.video.getScreenFrameBuffer(), "00/00 fps").width;
+			this.help_str_len = this.font.measureText(me.video.getSystemContext(), this.help_str).width;
+			this.fps_str_len = this.font.measureText(me.video.getSystemContext(), "00/00 fps").width;
 			
 			// bind the "S" and "H" keys
 			me.input.bindKey(me.input.KEY.S, "show");
@@ -7509,7 +7630,10 @@ var me = me || {};
 		};
 
 		/**
-		 * return a reference of the display canvas
+		 * return a reference to the screen canvas <br>
+		 * use this when checking for display size, event <br>
+		 * or if you need to apply any special "effect" to <br>
+		 * the corresponding context (ie. imageSmoothingEnabled)
 		 * @name me.video#getScreenCanvas
 		 * @function
 		 * @return {Canvas}
@@ -7519,12 +7643,22 @@ var me = me || {};
 		};
 
 		/**
-		 * return a reference to the screen framebuffer
-		 * @name me.video#getScreenFrameBuffer
+		 * return a reference to the system canvas
+		 * @name me.video#getSystemCanvas
+		 * @function
+		 * @return {Canvas}
+		 */
+		api.getSystemCanvas = function() {
+			return backBufferCanvas;
+		};
+		
+		/**
+		 * return a reference to the system 2d Context
+		 * @name me.video#getSystemContext
 		 * @function
 		 * @return {Context2D}
 		 */
-		api.getScreenFrameBuffer = function() {
+		api.getSystemContext = function() {
 			return backBufferContext2D;
 		};
 		
@@ -7536,8 +7670,8 @@ var me = me || {};
 			if (auto_scale) {
 				// get the parent container max size
 				var parent = me.video.getScreenCanvas().parentNode;
-				var max_width = parent.width || window.innerWidth;
-				var max_height = parent.height || window.innerHeight;
+				var max_width = parent.offsetWidth || window.innerWidth;
+				var max_height = parent.offsetHeight || window.innerHeight;
 				
 				if (deferResizeId) {
 					// cancel any previous pending resize
@@ -7622,7 +7756,27 @@ var me = me || {};
 			context.scale(scale, scale);
 
 		};
-
+		
+		/**
+		 * enable/disable image smoothing <br>
+		 * (!) this might not be supported by all browsers <br>
+		 * default : enabled
+		 * @name me.video#setImageSmoothing
+		 * @function
+		 * @param {Boolean} enable
+		 */
+		api.setImageSmoothing = function(enable) {
+			// a quick polyfill for the `imageSmoothingEnabled` property
+			var vendors = ['ms', 'moz', 'webkit', 'o'];
+			for(var x = 0; x < vendors.length; ++x) {
+				if (context2D[vendors[x]+'ImageSmoothingEnabled'] !== undefined) {
+					context2D[vendors[x]+'ImageSmoothingEnabled'] = enable
+				}
+			};
+			// generic one (if implemented)
+			context2D.imageSmoothingEnabled = false;
+		};
+		
 		/**
 		 * enable/disable Alpha for the specified context
 		 * @name me.video#setAlpha
@@ -8634,6 +8788,15 @@ var me = me || {};
 			return path.replace(removepath, '').replace(removeext, '');
 		};
 
+		/**
+		 * return the extension of the file in the given path <br>
+		 *
+		 * @param  {String} path path containing the filename
+		 * @return {String} filename extension.
+		 */
+		api.getFileExtension = function(path) {
+			return path.substring(path.lastIndexOf(".") + 1, path.length);
+		};
 		
 		/* ---
 		 
@@ -9031,8 +9194,8 @@ var me = me || {};
 				var oProp = properties.getElementsByTagName(me.TMX_TAG_PROPERTY);
 
 				for ( var i = 0; i < oProp.length; i++) {
-					var propname = me.XMLParser.getStringAttribute(oProp[i], me.TMX_TAG_NAME);
-					var value = me.XMLParser.getStringAttribute(oProp[i], me.TMX_TAG_VALUE);
+					var propname = me.TMXParser.getStringAttribute(oProp[i], me.TMX_TAG_NAME);
+					var value = me.TMXParser.getStringAttribute(oProp[i], me.TMX_TAG_VALUE);
 					
 					// if value not defined or boolean
 					if (!value || value.isBoolean()) {
@@ -9098,9 +9261,9 @@ var me = me || {};
 			this.objects = [];
 
 			this.name   = name;
-			this.width  = me.XMLParser.getIntAttribute(tmxObjGroup, me.TMX_TAG_WIDTH);
-			this.height = me.XMLParser.getIntAttribute(tmxObjGroup, me.TMX_TAG_HEIGHT);
-			this.visible = (me.XMLParser.getIntAttribute(tmxObjGroup, me.TMX_TAG_VISIBLE, 1) == 1);
+			this.width  = me.TMXParser.getIntAttribute(tmxObjGroup, me.TMX_TAG_WIDTH);
+			this.height = me.TMXParser.getIntAttribute(tmxObjGroup, me.TMX_TAG_HEIGHT);
+			this.visible = (me.TMXParser.getIntAttribute(tmxObjGroup, me.TMX_TAG_VISIBLE, 1) == 1);
 			this.z       = z;
 
 						
@@ -9147,14 +9310,14 @@ var me = me || {};
 	me.TMXOBject = Object.extend(
 	{
 		init :  function(tmxObj, tilesets, z) {
-			this.name = me.XMLParser.getStringAttribute(tmxObj, me.TMX_TAG_NAME);
-			this.x = me.XMLParser.getIntAttribute(tmxObj, me.TMX_TAG_X);
-			this.y = me.XMLParser.getIntAttribute(tmxObj, me.TMX_TAG_Y);
+			this.name = me.TMXParser.getStringAttribute(tmxObj, me.TMX_TAG_NAME);
+			this.x = me.TMXParser.getIntAttribute(tmxObj, me.TMX_TAG_X);
+			this.y = me.TMXParser.getIntAttribute(tmxObj, me.TMX_TAG_Y);
 			this.z = z;
 
-			this.width = me.XMLParser.getIntAttribute(tmxObj, me.TMX_TAG_WIDTH, 0);
-			this.height = me.XMLParser.getIntAttribute(tmxObj, me.TMX_TAG_HEIGHT, 0);
-			this.gid = me.XMLParser.getIntAttribute(tmxObj, me.TMX_TAG_GID, null);
+			this.width = me.TMXParser.getIntAttribute(tmxObj, me.TMX_TAG_WIDTH, 0);
+			this.height = me.TMXParser.getIntAttribute(tmxObj, me.TMX_TAG_HEIGHT, 0);
+			this.gid = me.TMXParser.getIntAttribute(tmxObj, me.TMX_TAG_GID, null);
 			// check if the object has an associated gid	
 			if (this.gid) {
 				
@@ -9186,7 +9349,7 @@ var me = me || {};
 
 				if (polygon.length) {
 					this.points = [];
-					var points = me.XMLParser.getStringAttribute(polygon[0], me.TMX_TAG_POINTS);
+					var points = me.TMXParser.getStringAttribute(polygon[0], me.TMX_TAG_POINTS);
 					var point = points.split(" ");
 					for (var i = 0, v; i < point.length; i++) {
 						v = point[i].split(",");
@@ -9434,29 +9597,29 @@ var me = me || {};
 		init: function (xmltileset) {
 
 			// first gid
-			this.firstgid = me.XMLParser.getIntAttribute(xmltileset, me.TMX_TAG_FIRSTGID);
+			this.firstgid = me.TMXParser.getIntAttribute(xmltileset, me.TMX_TAG_FIRSTGID);
 
-			var src = me.XMLParser.getStringAttribute(xmltileset, me.TMX_TAG_SOURCE);
+			var src = me.TMXParser.getStringAttribute(xmltileset, me.TMX_TAG_SOURCE);
 			if (src) {
 				// load TSX
 				src = me.utils.getBasename(src);
-				xmltileset = me.loader.getXML(src);
+				xmltileset = me.loader.getTMX(src);
 
 				if (!xmltileset) {
 					throw "melonJS:" + src + " TSX tileset not found";
 				}
 
 				// FIXME: This is ok for now, but it wipes out the
-				// XML currently loaded into the global `me.XMLParser`
-				me.XMLParser.parseFromString(xmltileset);
-				xmltileset = me.XMLParser.getFirstElementByTagName("tileset");
+				// XML currently loaded into the global `me.TMXParser`
+				me.TMXParser.parseFromString(xmltileset);
+				xmltileset = me.TMXParser.getFirstElementByTagName("tileset");
 			}
 
-			this.parent(me.XMLParser.getStringAttribute(xmltileset, me.TMX_TAG_NAME),
-						me.XMLParser.getIntAttribute(xmltileset, me.TMX_TAG_TILEWIDTH),
-						me.XMLParser.getIntAttribute(xmltileset, me.TMX_TAG_TILEHEIGHT),
-						me.XMLParser.getIntAttribute(xmltileset, me.TMX_TAG_SPACING, 0), 
-						me.XMLParser.getIntAttribute(xmltileset, me.TMX_TAG_MARGIN, 0), 
+			this.parent(me.TMXParser.getStringAttribute(xmltileset, me.TMX_TAG_NAME),
+						me.TMXParser.getIntAttribute(xmltileset, me.TMX_TAG_TILEWIDTH),
+						me.TMXParser.getIntAttribute(xmltileset, me.TMX_TAG_TILEHEIGHT),
+						me.TMXParser.getIntAttribute(xmltileset, me.TMX_TAG_SPACING, 0), 
+						me.TMXParser.getIntAttribute(xmltileset, me.TMX_TAG_MARGIN, 0), 
 						xmltileset.getElementsByTagName(me.TMX_TAG_IMAGE)[0].getAttribute(me.TMX_TAG_SOURCE));
 			
 			// compute the last gid value in the tileset
@@ -9475,14 +9638,14 @@ var me = me || {};
 			this.tileoffset = new me.Vector2d(0,0);
 			var offset = xmltileset.getElementsByTagName(me.TMX_TAG_TILEOFFSET);
 			if (offset.length>0) {
-				this.tileoffset.x = me.XMLParser.getIntAttribute(offset[0], me.TMX_TAG_X);
-				this.tileoffset.y = me.XMLParser.getIntAttribute(offset[0], me.TMX_TAG_Y);
+				this.tileoffset.x = me.TMXParser.getIntAttribute(offset[0], me.TMX_TAG_X);
+				this.tileoffset.y = me.TMXParser.getIntAttribute(offset[0], me.TMX_TAG_Y);
 			}
 
 			// set tile properties, if any
 			var tileInfo = xmltileset.getElementsByTagName(me.TMX_TAG_TILE);
 			for ( var i = 0; i < tileInfo.length; i++) {
-				var tileID = me.XMLParser.getIntAttribute(tileInfo[i], me.TMX_TAG_ID) + this.firstgid;
+				var tileID = me.TMXParser.getIntAttribute(tileInfo[i], me.TMX_TAG_ID) + this.firstgid;
 
 				this.TileProperties[tileID] = {};
 
@@ -10422,8 +10585,8 @@ var me = me || {};
 		// constructor
 		init: function(layer, tilewidth, tileheight, orientation, tilesets, zOrder) {
 			// call the parent
-			this.parent(me.XMLParser.getIntAttribute(layer, me.TMX_TAG_WIDTH), 
-						me.XMLParser.getIntAttribute(layer, me.TMX_TAG_HEIGHT),
+			this.parent(me.TMXParser.getIntAttribute(layer, me.TMX_TAG_WIDTH), 
+						me.TMXParser.getIntAttribute(layer, me.TMX_TAG_HEIGHT),
 						tilewidth, 
 						tileheight,
 						// tilesets should exist here !
@@ -10432,9 +10595,9 @@ var me = me || {};
 						
 			// additional TMX flags
 			this.orientation = orientation;
-			this.name = me.XMLParser.getStringAttribute(layer, me.TMX_TAG_NAME);
-			this.visible = (me.XMLParser.getIntAttribute(layer, me.TMX_TAG_VISIBLE, 1) == 1);
-			this.opacity = me.XMLParser.getFloatAttribute(layer, me.TMX_TAG_OPACITY, 1.0).clamp(0.0, 1.0);
+			this.name = me.TMXParser.getStringAttribute(layer, me.TMX_TAG_NAME);
+			this.visible = (me.TMXParser.getIntAttribute(layer, me.TMX_TAG_VISIBLE, 1) == 1);
+			this.opacity = me.TMXParser.getFloatAttribute(layer, me.TMX_TAG_OPACITY, 1.0).clamp(0.0, 1.0);
 				
 			// check if we have any user-defined properties 
 			me.TMXUtils.setTMXProperties(this, layer);
@@ -10452,8 +10615,8 @@ var me = me || {};
 
 			// store the data information
 			var xmldata = layer.getElementsByTagName(me.TMX_TAG_DATA)[0];
-			var encoding = me.XMLParser.getStringAttribute(xmldata, me.TMX_TAG_ENCODING, null);
-			var compression = me.XMLParser.getStringAttribute(xmldata, me.TMX_TAG_COMPRESSION, null);
+			var encoding = me.TMXParser.getStringAttribute(xmldata, me.TMX_TAG_ENCODING, null);
+			var compression = me.TMXParser.getStringAttribute(xmldata, me.TMX_TAG_COMPRESSION, null);
 
 			// make sure this is not happening
 			if (encoding == '')
@@ -10572,7 +10735,7 @@ var me = me || {};
 			for ( var y = 0 ; y <this.height; y++) {
 				for ( var x = 0; x <this.width; x++) {
 					// get the value of the gid
-					var gid = (encoding == null) ? me.XMLParser.getIntAttribute(data[idx++], me.TMX_TAG_GID) : data[idx++];
+					var gid = (encoding == null) ? me.TMXParser.getIntAttribute(data[idx++], me.TMX_TAG_GID) : data[idx++];
 					// fill the array										
 					if (gid !== 0) {
 						// create a new tile object
@@ -10865,14 +11028,15 @@ var me = me || {};
 	 */
 	me.TMXTileMap = me.TileMap.extend({
 		// constructor
-		init: function(xmlfile, x, y) {
+		init: function(tmxfile, x, y) {
 			// call the constructor
 			this.parent(x, y);
 
-			this.xmlMap = me.loader.getXML(xmlfile);
+			this.xmlMap = me.loader.getTMX(tmxfile);
+			this.isJSON = me.loader.getTMXFormat(tmxfile) === 'json';
 
 			if (!this.xmlMap) {
-				throw "melonJS:" + xmlfile + " TMX map not found";
+				throw "melonJS:" + tmxfile + " TMX map not found";
 			};
 
 			// tilemap version
@@ -10924,10 +11088,10 @@ var me = me || {};
 			var lratio = 0.25; // 1/4 
 
 			// init the parser
-			me.XMLParser.parseFromString(this.xmlMap);
+			me.TMXParser.parseFromString(this.xmlMap, this.isJSON);
 
 			// retreive all the elements of the XML file
-			var xmlElements = me.XMLParser.getAllTagElements();
+			var xmlElements = me.TMXParser.getAllTagElements();
 
 			// parse all tags
 			for ( var i = 0; i < xmlElements.length; i++) {
@@ -10938,15 +11102,15 @@ var me = me || {};
 				// get the map information
 				case me.TMX_TAG_MAP: {
 				   var map = xmlElements.item(i);
-				   this.version = me.XMLParser.getStringAttribute(map, me.TMX_TAG_VERSION);
-				   this.orientation = me.XMLParser.getStringAttribute(map, me.TMX_TAG_ORIENTATION);
-				   this.width = me.XMLParser.getIntAttribute(map, me.TMX_TAG_WIDTH);
-				   this.height = me.XMLParser.getIntAttribute(map, me.TMX_TAG_HEIGHT);
-				   this.tilewidth = me.XMLParser.getIntAttribute(map,	me.TMX_TAG_TILEWIDTH);
-				   this.tileheight = me.XMLParser.getIntAttribute(map, me.TMX_TAG_TILEHEIGHT);
+				   this.version = me.TMXParser.getStringAttribute(map, me.TMX_TAG_VERSION);
+				   this.orientation = me.TMXParser.getStringAttribute(map, me.TMX_TAG_ORIENTATION);
+				   this.width = me.TMXParser.getIntAttribute(map, me.TMX_TAG_WIDTH);
+				   this.height = me.TMXParser.getIntAttribute(map, me.TMX_TAG_HEIGHT);
+				   this.tilewidth = me.TMXParser.getIntAttribute(map,	me.TMX_TAG_TILEWIDTH);
+				   this.tileheight = me.TMXParser.getIntAttribute(map, me.TMX_TAG_TILEHEIGHT);
 				   this.realwidth = this.width * this.tilewidth;
 				   this.realheight = this.height * this.tileheight;
-				   this.backgroundcolor = me.XMLParser.getStringAttribute(map, me.TMX_BACKGROUND_COLOR);
+				   this.backgroundcolor = me.TMXParser.getStringAttribute(map, me.TMX_BACKGROUND_COLOR);
 				   this.z = zOrder++;
 
 				   // center the map if smaller than the current viewport
@@ -10996,17 +11160,17 @@ var me = me || {};
 				case me.TMX_TAG_IMAGE_LAYER: {
 					
 					// extract layer information
-					var iln = me.XMLParser.getStringAttribute(xmlElements.item(i), me.TMX_TAG_NAME);
-					var ilw = me.XMLParser.getIntAttribute(xmlElements.item(i), me.TMX_TAG_WIDTH);
-					var ilh = me.XMLParser.getIntAttribute(xmlElements.item(i), me.TMX_TAG_HEIGHT);
+					var iln = me.TMXParser.getStringAttribute(xmlElements.item(i), me.TMX_TAG_NAME);
+					var ilw = me.TMXParser.getIntAttribute(xmlElements.item(i), me.TMX_TAG_WIDTH);
+					var ilh = me.TMXParser.getIntAttribute(xmlElements.item(i), me.TMX_TAG_HEIGHT);
 					var ilsrc = xmlElements.item(i).getElementsByTagName(me.TMX_TAG_IMAGE)[0].getAttribute(me.TMX_TAG_SOURCE);
 					
 					// create the layer
 					var ilayer = new me.ImageLayer(iln, ilw * this.tilewidth, ilh * this.tileheight, ilsrc, zOrder++);
 				    
 					// set some additional flags
-					ilayer.visible = (me.XMLParser.getIntAttribute(xmlElements.item(i), me.TMX_TAG_VISIBLE, 1) == 1);
-					ilayer.opacity = me.XMLParser.getFloatAttribute(xmlElements.item(i), me.TMX_TAG_OPACITY, 1.0);
+					ilayer.visible = (me.TMXParser.getIntAttribute(xmlElements.item(i), me.TMX_TAG_VISIBLE, 1) == 1);
+					ilayer.opacity = me.TMXParser.getFloatAttribute(xmlElements.item(i), me.TMX_TAG_OPACITY, 1.0);
 					
 					// check if we have any properties 
 					me.TMXUtils.setTMXProperties(ilayer, xmlElements.item(i));
@@ -11020,15 +11184,15 @@ var me = me || {};
 				// get the layer(s) information
 				case me.TMX_TAG_LAYER: {
 					// try to identify specific layer type based on the naming convention
-					var layer_name = me.XMLParser.getStringAttribute(xmlElements.item(i), me.TMX_TAG_NAME);
+					var layer_name = me.TMXParser.getStringAttribute(xmlElements.item(i), me.TMX_TAG_NAME);
 				
 					// keep this for now for backward-compatibility
 					if (layer_name.toLowerCase().contains(me.LevelConstants.PARALLAX_MAP)) {
 						
 						
 						// extract layer information
-						var ilw = me.XMLParser.getIntAttribute(xmlElements.item(i), me.TMX_TAG_WIDTH);
-						var ilh = me.XMLParser.getIntAttribute(xmlElements.item(i), me.TMX_TAG_HEIGHT);
+						var ilw = me.TMXParser.getIntAttribute(xmlElements.item(i), me.TMX_TAG_WIDTH);
+						var ilh = me.TMXParser.getIntAttribute(xmlElements.item(i), me.TMX_TAG_HEIGHT);
 						
 						// get the layer properties
 						var properties = {};
@@ -11043,8 +11207,8 @@ var me = me || {};
 						var ilayer = new me.ImageLayer(layer_name, ilw * this.tilewidth, ilh * this.tileheight, properties.imagesrc, zOrder++, lratio );
 						
 						// apply default TMX properties
-						ilayer.visible = (me.XMLParser.getIntAttribute(xmlElements.item(i), me.TMX_TAG_VISIBLE, 1) == 1);
-						ilayer.opacity = me.XMLParser.getFloatAttribute(xmlElements.item(i), me.TMX_TAG_OPACITY, 1.0);
+						ilayer.visible = (me.TMXParser.getIntAttribute(xmlElements.item(i), me.TMX_TAG_VISIBLE, 1) == 1);
+						ilayer.opacity = me.TMXParser.getFloatAttribute(xmlElements.item(i), me.TMX_TAG_OPACITY, 1.0);
 						
 						// apply other user defined properties
 						me.TMXUtils.mergeProperties(ilayer, properties, false);
@@ -11065,7 +11229,7 @@ var me = me || {};
 
 				// get the object groups information
 				case me.TMX_TAG_OBJECTGROUP: {
-				   var name = me.XMLParser.getStringAttribute(xmlElements.item(i), me.TMX_TAG_NAME);
+				   var name = me.TMXParser.getStringAttribute(xmlElements.item(i), me.TMX_TAG_NAME);
 				   this.objectGroups.push(new me.TMXOBjectGroup(name, xmlElements.item(i), this.tilesets, zOrder++));
 				   break;
 				}
@@ -11073,8 +11237,8 @@ var me = me || {};
 				} // end switch 
 			} // end for
 
-			// free the XMLParser ressource
-			me.XMLParser.free();
+			// free the TMXParser ressource
+			me.TMXParser.free();
 
 			// flag as loaded
 			this.initialized = true;

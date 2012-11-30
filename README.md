@@ -54,6 +54,11 @@ rocks for a little extra weight.  Use the environment to your advantage.
 
 [TODO]
 
+* Move the flying saucer by tap-and-drag; it will follow where you are pointing.
+* Clone some kinds of materials by tapping on them.
+* Materials that can be cloned can also be attached to other items with ropes;
+  tap-and-drag from the item being cloned to the item you want attached.
+
 ## Play Online
 
 [On Github](http://blipjoy.github.com/game-off-2012/public/index.html)
@@ -61,6 +66,11 @@ rocks for a little extra weight.  Use the environment to your advantage.
 ## Develop
 
   $ git clone https://github.com/Blipjoy/game-off-2012.git
+
+Follow me:
+
+* [Blog](http://blog.kodewerx.org/)
+* [@kodewerx](http://twitter.com/kodewerx)
 
 ### Dependencies
 

@@ -77,14 +77,12 @@ var game = {
         me.state.set(me.state.BLIPJOY, new game.BlipjoyScreen(true));
 
         me.state.set(me.state.SCENE00, new game.Scene00(true));
-        /*
         me.state.set(me.state.SCENE01, new game.Scene01(true));
         me.state.set(me.state.SCENE02, new game.Scene02(true));
-        me.state.set(me.state.SCENE03, new game.Scene03(true));
-        */
+//        me.state.set(me.state.SCENE03, new game.Scene03(true));
 
         // Start the game.
-        me.state.change(me.state.BLIPJOY);
+        me.state.change(me.state.BLIPJOY); //BLIPJOY
     },
 
     // Helper function to determine if a variable is an Object.

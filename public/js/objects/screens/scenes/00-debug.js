@@ -1,11 +1,4 @@
 game.Scene00 = game.PlayScreen.extend({
-    "init" : function init() {
-        this.lightlevel = 0;
-        this.color = "#141414";
-
-        this.parent.apply(this, arguments);
-    },
-
     "onResetEvent" : function onResetEvent() {
         game.scene = this;
 
@@ -14,7 +7,7 @@ game.Scene00 = game.PlayScreen.extend({
         // Create a floor
         me.game.add(new game.Line(
             cp.v(0, 0),
-            cp.v(me.video.getWidth(), 0),
+            cp.v(c.WIDTH, 0),
             3,
             {
                 "elasticity" : 1,

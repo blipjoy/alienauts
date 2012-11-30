@@ -33,6 +33,10 @@ game.Line = Object.extend({
     },
 
     "draw" : function draw(context) {
+        if (this.color === "transparent") {
+            return;
+        }
+
         var shape = this.shape,
             a = shape.a,
             b = shape.b;

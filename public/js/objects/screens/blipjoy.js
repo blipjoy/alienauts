@@ -81,7 +81,9 @@ game.BlipjoyScreen = me.ScreenObject.extend({
         }, 500);
 
         setTimeout(function () {
-            me.state.change(me.state.SCENE00);
+            me.game.viewport.fadeIn("#000", 250, function () {
+                me.state.change(me.state.SCENE01);
+            });
         }, 5000);
     },
 

@@ -18,6 +18,10 @@ var c = {
     "GROUP_ROPE"        : 1, // Rope control points
     "GROUP_CHAIN"       : 2, // Chain segments
 
+    // Chipmunk collision types
+    "TYPE_PLAYER"       : 1,
+    "TYPE_EXIT"         : 2,
+
     "MOBILE"            : navigator.userAgent.match(/Android|iPhone|iPad|iPod/i),
     "GUID"              : (function () {
         function S4() {
@@ -92,10 +96,8 @@ me.sys.useNativeAnimFrame = true; // Be fast!
 me.sys.stopOnAudioError = false;
 
 // Game states.
-me.state.SCENE00 = me.state.USER + 0;
-me.state.SCENE01 = me.state.USER + 1;
-me.state.SCENE02 = me.state.USER + 2;
-me.state.SCENE03 = me.state.USER + 3;
-
-me.state.BLIPJOY = me.state.USER + 20;
-me.state.INTRO = me.state.USER + 21;
+me.state.BLIPJOY = me.state.USER + 0;
+me.state.SCENE00 = me.state.USER + 10;
+me.state.SCENE01 = me.state.USER + 11;
+me.state.SCENE02 = me.state.USER + 12;
+me.state.SCENE03 = me.state.USER + 13;

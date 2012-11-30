@@ -13,23 +13,14 @@ game.LightSource = game.Circle.extend({
         var i = settings.intensity,
             i2 = i * 2;
 
-        // FIXME: Call this function every time the browser resizes
-        function createCanvas() {
-            var canvas = document.createElement("canvas");
-            canvas.width = i2;
-            canvas.height = i2;
-
-            return canvas.getContext("2d");
-        }
-
-        this.backbuffer = createCanvas();
+        this.backbuffer = me.video.createCanvasSurface(i2, i2);
         this.backbuffer.fillStyle = "black";
 
-        // FIXME: Render beams (like from a flashlight or lamp with a shade)
+        // FIXME: Render directional light (like from a flashlight or lamp with a shade)
         // Should be possible with a clipping region
 
         // Render a radial beam of light
-        this.gradial = createCanvas();
+        this.gradial = me.video.createCanvasSurface(i2, i2);
         var gradial = this.gradial.createRadialGradient(i, i, r * 1.5, i, i, i);
         gradial.addColorStop(0, game.getColor(settings.color, settings.brightness));
         gradial.addColorStop(1, game.getColor(settings.color, 0));

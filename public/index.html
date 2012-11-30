@@ -30,6 +30,12 @@
             <script type="text/javascript" src="js/objects/screens/playscreen.js"></script>
 
             <script type="text/javascript" src="js/objects/screens/scenes/00-debug.js"></script>
+            <script type="text/javascript" src="js/objects/screens/scenes/01-lab.js"></script>
+            <script type="text/javascript" src="js/objects/screens/scenes/02-lab.js"></script>
+
+            <script type="text/javascript" src="js/objects/exit.js"></script>
+            <script type="text/javascript" src="js/objects/observationroom.js"></script>
+            <script type="text/javascript" src="js/objects/scientist.js"></script>
 
             <script type="text/javascript" src="js/resources.js"></script>
 
@@ -37,6 +43,13 @@
                 /* Bootstrap */
                 window.onReady(function onReady() {
                     game.onload();
+
+                    /* Prevents the webview from moving on a swipe */
+                    window.document.addEventListener("touchmove", function (e) {
+                        e.preventDefault();
+                        window.scroll(0, 0);
+                        return false;
+                    }, false);
 
                     /* Scroll away mobile GUI */
                     (function () {

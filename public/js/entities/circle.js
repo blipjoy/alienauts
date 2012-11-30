@@ -10,7 +10,6 @@ game.Circle = me.Rect.extend({
         ];
         settings.mass = settings.mass || 1;
         settings.group = settings.group || 0;
-        settings.isBalloon = settings.isBalloon || false;
         settings.elasticity = settings.elasticity || 0.3;
         settings.friction = settings.friction || 0.5;
 
@@ -23,7 +22,7 @@ game.Circle = me.Rect.extend({
         this.r = r;
         this.color = settings.color;
 
-        var b = this.body = new cp.Body(settings.mass, cp.momentForCircle(settings.mass, 0, r, cp.vzero));
+        var b = this.body = new cp.Body(Math.abs(settings.mass), cp.momentForCircle(Math.abs(settings.mass), 0, r, cp.vzero));
         var shape = space.addShape(new cp.CircleShape(b, r, cp.vzero));
         shape.setElasticity(settings.elasticity);
         shape.setFriction(settings.friction);
@@ -32,10 +31,10 @@ game.Circle = me.Rect.extend({
         shape.entity = this;
 
         // FIXME
-        if (settings.isBalloon) {
+        if (settings.mass < 0) {
             var vf = b.velocity_func;
-            var tg = cp.v(0, 600);
             b.velocity_func = function velocity_func(g, d, dt) {
+                var tg = cp.v(g.x, g.y * settings.mass);
                 vf.bind(b)(tg, d, dt);
             }
         }

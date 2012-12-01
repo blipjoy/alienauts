@@ -33,6 +33,8 @@ game.Scene02 = game.Scene01.extend({
         ), 1000);
 
         // Create an air current.
+        var img = me.loader.getImage("ac_duct");
+        me.game.add(new me.SpriteObject(20, 35, img, img.width, img.height), 1000);
         me.game.add(new game.AirFlow(20, 20, c.WIDTH - 40, c.HEIGHT * 0.2), 1000);
 
 

@@ -9,6 +9,7 @@ game.Circle = me.Rect.extend({
             Math.floor(Math.random() * 256)
         ];
         settings.mass = settings.mass || 1;
+        settings.layers = settings.layers || c.LAYER_SHAPES;
         settings.group = settings.group || 0;
         settings.collision_type = settings.collision_type || 0;
         settings.elasticity = settings.elasticity || 0.3;
@@ -30,7 +31,7 @@ game.Circle = me.Rect.extend({
         var shape = space.addShape(new cp.CircleShape(b, r, cp.vzero));
         shape.setElasticity(settings.elasticity);
         shape.setFriction(settings.friction);
-        shape.setLayers(c.LAYER_SHAPES | c.LAYER_AIRFLOW);
+        shape.setLayers(settings.layers);
         shape.group = settings.group;
         shape.collision_type = settings.collision_type;
         shape.entity = this;

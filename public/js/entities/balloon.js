@@ -4,6 +4,7 @@ game.Balloon = game.Circle.extend({
 
         // Default settings
         settings.collision_type = c.TYPE_BALLOON;
+        settings.layers = c.LAYER_AIRFLOW;
 
         this.parent(x, y, r, settings);
 

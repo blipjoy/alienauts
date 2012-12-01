@@ -35,7 +35,7 @@ game.Player = me.Rect.extend({
         var shape = space.addShape(new cp.CircleShape(this.body, this.r, cp.vzero));
         shape.setElasticity(0);
         shape.setFriction(0.8);
-        shape.setLayers(c.LAYER_SHAPES | c.LAYER_AIRFLOW);
+        shape.setLayers(c.LAYER_SHAPES);
         shape.collision_type = c.TYPE_PLAYER;
         shape.entity = this;
 

@@ -31,7 +31,7 @@ game.Scene01 = game.PlayScreen.extend({
         var self = this;
         game.scene = this;
 
-        var h = c.HEIGHT * 0.333;
+        var h = c.HEIGHT * 0.25;
 
         // Create a floor.
         var settings = {
@@ -72,7 +72,7 @@ game.Scene01 = game.PlayScreen.extend({
 
 
         // Create player entity.
-        game.player = new game.Player(140, c.HEIGHT * 0.666 - 25);
+        game.player = new game.Player(140, c.HEIGHT * 0.75 - 25);
         me.game.add(game.player, 1001);
 
         // Spawn a tutorial object after 15 seconds.
@@ -101,7 +101,7 @@ game.Scene01 = game.PlayScreen.extend({
     },
 
     "draw" : function draw(context) {
-        var hh = c.HEIGHT / 2;
+        var h = c.HEIGHT * 0.6;
 
         this.parent(context);
 
@@ -112,30 +112,30 @@ game.Scene01 = game.PlayScreen.extend({
 
         // Perspective lines
         context.beginPath();
-        context.moveTo(0, hh + 100);
-        context.lineTo(100, hh);
-        context.lineTo(c.WIDTH - 100, hh);
-        context.lineTo(c.WIDTH, hh + 100);
+        context.moveTo(0, h + 100);
+        context.lineTo(100, h);
+        context.lineTo(c.WIDTH - 100, h);
+        context.lineTo(c.WIDTH, h + 100);
         context.moveTo(100, 0);
-        context.lineTo(100, hh);
+        context.lineTo(100, h);
         context.moveTo(c.WIDTH - 100, 0);
-        context.lineTo(c.WIDTH - 100, hh);
+        context.lineTo(c.WIDTH - 100, h);
         context.stroke();
 
         // Closed door
         context.beginPath();
-        context.moveTo(75, hh + 25);
-        context.lineTo(75, c.HEIGHT * 0.20);
-        context.lineTo(25, c.HEIGHT * 0.23);
-        context.lineTo(25, hh + 75);
+        context.moveTo(75, h + 25);
+        context.lineTo(75, c.HEIGHT * 0.25);
+        context.lineTo(25, c.HEIGHT * 0.28);
+        context.lineTo(25, h + 75);
         context.stroke();
 
         // Door
         context.beginPath();
-        context.moveTo(c.WIDTH - 75, hh + 25);
-        context.lineTo(c.WIDTH - 75, c.HEIGHT * 0.20);
-        context.lineTo(c.WIDTH - 25, c.HEIGHT * 0.23);
-        context.lineTo(c.WIDTH - 25, hh + 75);
+        context.moveTo(c.WIDTH - 75, h + 25);
+        context.lineTo(c.WIDTH - 75, c.HEIGHT * 0.25);
+        context.lineTo(c.WIDTH - 25, c.HEIGHT * 0.28);
+        context.lineTo(c.WIDTH - 25, h + 75);
         context.closePath();
         context.fill();
         context.stroke();

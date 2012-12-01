@@ -31,7 +31,7 @@ game.Scene02 = game.Scene01.extend({
         this.parent();
 
         var space = cm.getSpace(),
-            h = c.HEIGHT * 0.33;
+            h = c.HEIGHT * 0.25;
 
         // Create an obstacle.
         var settings = {
@@ -41,18 +41,18 @@ game.Scene02 = game.Scene01.extend({
         };
         me.game.add(new game.Line(
             cp.v(c.WIDTH - 200, h),
-            cp.v(c.WIDTH - 200, c.HEIGHT * 0.60),
+            cp.v(c.WIDTH - 200, c.HEIGHT * 0.50),
             3,
             settings
         ), 1000);
         me.game.add(new game.Line(
-            cp.v(c.WIDTH - 200, c.HEIGHT * 0.60),
-            cp.v(c.WIDTH - 165, c.HEIGHT * 0.55),
+            cp.v(c.WIDTH - 200, c.HEIGHT * 0.50),
+            cp.v(c.WIDTH - 165, c.HEIGHT * 0.45),
             3,
             settings
         ), 1000);
         me.game.add(new game.Line(
-            cp.v(c.WIDTH - 165, c.HEIGHT * 0.55),
+            cp.v(c.WIDTH - 165, c.HEIGHT * 0.45),
             cp.v(c.WIDTH - 165, h),
             3,
             settings
@@ -60,14 +60,14 @@ game.Scene02 = game.Scene01.extend({
 
         // Create an air current.
         var img = me.loader.getImage("ac_duct");
-        me.game.add(new me.SpriteObject(20, 35, img, img.width, img.height), 1000);
-        me.game.add(new game.AirFlow(20, 20, c.WIDTH - 40, c.HEIGHT * 0.2), 1000);
+        me.game.add(new me.SpriteObject(20, 25, img, img.width, img.height), 1000);
+        me.game.add(new game.AirFlow(0, 0, c.WIDTH, c.HEIGHT * 0.2), 1000);
 
 
         // Create a balloon.
         var balloon = new game.Balloon(
-            c.WIDTH * 0.5,
-            c.HEIGHT - h - 100,
+            c.WIDTH * 0.4,
+            c.HEIGHT - h - 90,
             15,
             {
                 "mass" : -1.5
@@ -76,7 +76,7 @@ game.Scene02 = game.Scene01.extend({
         me.game.add(balloon, 1003);
 
         // Attach balloon with a rope.
-        me.game.add(new game.Rope(balloon.body, space.staticBody, cp.v(0, -20), cp.v(c.WIDTH * 0.5, h), 80, {
+        me.game.add(new game.Rope(balloon.body, space.staticBody, cp.v(0, -20), cp.v(c.WIDTH * 0.4, h), 70, {
             "mass" : 0.2
         }), 1002);
 
@@ -93,15 +93,14 @@ game.Scene02 = game.Scene01.extend({
         context.fillStyle = "#ddf";
 
         // Draw obstacle
-        var x = c.WIDTH - 200,
-            y = c.HEIGHT * 0.5;
+        var x = c.WIDTH - 200;
 
         // Left face
         context.beginPath();
-        context.moveTo(x - 20, c.HEIGHT * 0.35);
-        context.lineTo(x + 20, c.HEIGHT * 0.45);
-        context.lineTo(x + 20, c.HEIGHT * 0.7);
-        context.lineTo(x - 20, y);
+        context.moveTo(x - 20, c.HEIGHT * 0.45);
+        context.lineTo(x + 20, c.HEIGHT * 0.55);
+        context.lineTo(x + 20, c.HEIGHT * 0.8);
+        context.lineTo(x - 20, c.HEIGHT * 0.6);
         context.closePath();
         context.stroke();
         context.fill();
@@ -109,10 +108,10 @@ game.Scene02 = game.Scene01.extend({
         // Top face
         context.fillStyle = "#ccd";
         context.beginPath();
-        context.moveTo(x - 20, c.HEIGHT * 0.35);
-        context.lineTo(x - 10, c.HEIGHT * 0.35);
-        context.lineTo(x + 34, c.HEIGHT * 0.45);
-        context.lineTo(x + 20, c.HEIGHT * 0.45);
+        context.moveTo(x - 20, c.HEIGHT * 0.45);
+        context.lineTo(x - 10, c.HEIGHT * 0.45);
+        context.lineTo(x + 34, c.HEIGHT * 0.55);
+        context.lineTo(x + 20, c.HEIGHT * 0.55);
         context.closePath();
         context.stroke();
         context.fill();
@@ -120,10 +119,10 @@ game.Scene02 = game.Scene01.extend({
         // Front face
         context.fillStyle = "#bbc";
         context.beginPath();
-        context.moveTo(x + 20, c.HEIGHT * 0.45);
-        context.lineTo(x + 34, c.HEIGHT * 0.45);
-        context.lineTo(x + 34, c.HEIGHT * 0.7);
-        context.lineTo(x + 20, c.HEIGHT * 0.7);
+        context.moveTo(x + 20, c.HEIGHT * 0.55);
+        context.lineTo(x + 34, c.HEIGHT * 0.55);
+        context.lineTo(x + 34, c.HEIGHT * 0.8);
+        context.lineTo(x + 20, c.HEIGHT * 0.8);
         context.closePath();
         context.stroke();
         context.fill();

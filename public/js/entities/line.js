@@ -25,7 +25,7 @@ game.Line = Object.extend({
         var shape = this.shape = space.addShape(new cp.SegmentShape(space.staticBody, a, b, r));
         shape.setElasticity(settings.elasticity);
         shape.setFriction(settings.friction);
-        shape.setLayers(c.LAYER_SHAPES);
+        shape.setLayers(c.LAYER_SHAPES | c.LAYER_AIRFLOW);
         shape.group = settings.group;
         shape.collision_type = settings.collision_type;
         shape.entity = this;

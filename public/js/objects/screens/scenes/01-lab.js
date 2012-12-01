@@ -1,5 +1,24 @@
 game.Scene01 = game.PlayScreen.extend({
+    // Exit to next scene
     "exit" : me.state.SCENE02,
+
+    // Tutorial object definition
+    "tutorial" : {
+        "ticks" : 0,
+        "anim" : function (context, ticks) {
+            context.drawImage(
+                me.loader.getImage("ship"),
+                35 + Math.sin(ticks * 0.05) * 20,
+                30
+            );
+
+            context.drawImage(
+                me.loader.getImage("hand"),
+                45 + (Math.sin(ticks * 0.05) + Math.cos(ticks * 0.05)) * 20,
+                40
+            );
+        }
+    },
 
     "init" : function init() {
         this.parent.apply(this, arguments);
@@ -9,6 +28,7 @@ game.Scene01 = game.PlayScreen.extend({
     },
 
     "onResetEvent" : function onResetEvent() {
+        var self = this;
         game.scene = this;
 
         var h = c.HEIGHT * 0.333;
@@ -55,6 +75,13 @@ game.Scene01 = game.PlayScreen.extend({
         game.player = new game.Player(140, c.HEIGHT * 0.666 - 25);
         me.game.add(game.player, 1001);
 
+        // Spawn a tutorial object after 15 seconds.
+        this.tutorialTimer = setTimeout(function () {
+            me.game.add(new game.Tutorial(self.tutorial), 1001);
+            me.game.sort();
+        }, 15000);
+
+
         // Create the observation window.
         me.game.add(new game.ObservationRoom(), 2000);
 
@@ -63,6 +90,12 @@ game.Scene01 = game.PlayScreen.extend({
             "direction" : -1,
             "head" : 1
         }), 2000);
+
+        this.parent();
+    },
+
+    "onDestroyEvent" : function onDestroyEvent() {
+        clearTimeout(this.tutorialTimer);
 
         this.parent();
     },

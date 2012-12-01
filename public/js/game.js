@@ -82,7 +82,7 @@ var game = {
 //        me.state.set(me.state.SCENE03, new game.Scene03(true));
 
         // Start the game.
-        me.state.change(me.state.SCENE02);
+        me.state.change(me.state.BLIPJOY);
     },
 
     "clone" : function clone(obj, self, touch, anchor) {
@@ -125,7 +125,7 @@ var game = {
             if (touched) {
                 var rope = new game.Rope(obj.body, touched.body, anchor, touched.entity.anchor, dist);
                 obj.rope = rope;
-                me.game.add(rope, 1000);
+                me.game.add(rope, 1002);
             }
         }
 

@@ -2,7 +2,11 @@ game.resources = {
     /* Graphics. */
     "img" : [
         "ac_duct",
+        "balloon",
+        "cloud",
         "blipjoy",
+        "hand",
+        "ship",
         "zap"
     ],
 

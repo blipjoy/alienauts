@@ -1,5 +1,31 @@
 game.Scene02 = game.Scene01.extend({
+    // Exit to next scene
     "exit" : me.state.SCENE00,
+
+    // Tutorial object definition
+    "tutorial" : {
+        "ticks" : 0,
+        "anim" : function (context, ticks) {
+            context.drawImage(
+                me.loader.getImage("ship"),
+                25,
+                35
+            );
+
+            context.drawImage(
+                me.loader.getImage("balloon"),
+                62,
+                25
+            );
+
+            var step = (ticks * 0.015) % (Math.PI / 2);
+            context.drawImage(
+                me.loader.getImage("hand"),
+                65 - Math.sin(step) * 30,
+                40 - Math.cos(step) * 10
+            );
+        }
+    },
 
     "onResetEvent" : function onResetEvent() {
         this.parent();

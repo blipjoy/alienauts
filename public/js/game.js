@@ -82,19 +82,34 @@ var game = {
 //        me.state.set(me.state.SCENE03, new game.Scene03(true));
 
         // Start the game.
-        me.state.change(me.state.BLIPJOY);
+        me.state.change(me.state.SCENE02);
     },
 
-    "clone" : function clone(obj, rect, touch, anchor) {
+    "clone" : function clone(obj, self, touch, anchor) {
         me.game.add(obj, 1003);
 
-        var dist = cp.v.dist(
-            cp.v(rect.pos.x + rect.hWidth, c.HEIGHT - rect.pos.y - rect.hHeight),
-            cp.v(touch.x, c.HEIGHT - touch.y)
-        );
+        var gp = game.player.body.p,
+            p = self.body.p,
+            dist = cp.v.dist(p, cp.v(touch.x, c.HEIGHT - touch.y));
+
+        // Create a "zap" sprite.
+        var img = me.loader.getImage("zap"),
+            sprite = new me.SpriteObject(
+                gp.x,
+                c.HEIGHT - gp.y - img.height / 2,
+                img,
+                img.width,
+                img.height
+            );
+        sprite.anchorPoint = new me.Vector2d(0, 0.5);
+        sprite.angle = -cp.v.toangle(cp.v.sub(p, gp));
+        me.game.add(sprite, 1004);
+        setTimeout(function () {
+            me.game.remove(sprite);
+        }, 100);
 
         // Attach a rope if an object is in range of the release point
-        if ((dist <= 100) && !rect.containsPoint(touch)) {
+        if ((dist <= 100) && !self.containsPoint(touch)) {
             var x = touch.x,
                 y = c.HEIGHT - touch.y,
                 r = 20,

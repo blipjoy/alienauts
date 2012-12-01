@@ -2,7 +2,8 @@ game.resources = {
     /* Graphics. */
     "img" : [
         "ac_duct",
-        "blipjoy"
+        "blipjoy",
+        "zap"
     ],
 
     /* Maps from Tiled. */

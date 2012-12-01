@@ -82,7 +82,39 @@ var game = {
 //        me.state.set(me.state.SCENE03, new game.Scene03(true));
 
         // Start the game.
-        me.state.change(me.state.BLIPJOY); //BLIPJOY
+        me.state.change(me.state.BLIPJOY);
+    },
+
+    "clone" : function clone(obj, rect, touch, anchor) {
+        me.game.add(obj, 1003);
+
+        var dist = cp.v.dist(
+            cp.v(rect.pos.x + rect.hWidth, c.HEIGHT - rect.pos.y - rect.hHeight),
+            cp.v(touch.x, c.HEIGHT - touch.y)
+        );
+
+        // Attach a rope if an object is in range of the release point
+        if ((dist <= 100) && !rect.containsPoint(touch)) {
+            var x = touch.x,
+                y = c.HEIGHT - touch.y,
+                r = 20,
+                bb = new cp.BB(x - r, y - r, x + r, y + r);
+
+            var touched = null;
+            cm.getSpace().bbQuery(bb, c.LAYER_SHAPES, 0, function (shape) {
+                if ([ "player", "stone", "rubber", "magnet" ].indexOf(shape.entity.name) >= 0) {
+                    touched = shape;
+                }
+            });
+
+            if (touched) {
+                var rope = new game.Rope(obj.body, touched.body, anchor, touched.entity.anchor, dist);
+                obj.rope = rope;
+                me.game.add(rope, 1000);
+            }
+        }
+
+        me.game.sort();
     },
 
     // Helper function to determine if a variable is an Object.

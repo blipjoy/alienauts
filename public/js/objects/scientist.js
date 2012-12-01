@@ -1,6 +1,7 @@
 game.Scientist = Object.extend({
     "init" : function init(x, y, settings) {
         this.visible = true;
+        this.name = "scientist";
 
         settings = settings || {};
 

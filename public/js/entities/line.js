@@ -10,12 +10,15 @@ game.Line = Object.extend({
         ];
         settings.mass = settings.mass || 1;
         settings.group = settings.group || 0;
+        settings.collision_type = settings.collision_type || c.TYPE_SOLID;
         settings.elasticity = settings.elasticity || 0.3;
         settings.friction = settings.friction || 0.5;
 
         var space = cm.getSpace();
 
         this.visible = true;
+        this.name = "line";
+
         this.color = settings.color;
         this.r = r;
 
@@ -24,6 +27,7 @@ game.Line = Object.extend({
         shape.setFriction(settings.friction);
         shape.setLayers(c.LAYER_SHAPES);
         shape.group = settings.group;
+        shape.collision_type = settings.collision_type;
         shape.entity = this;
     },
 

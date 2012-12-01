@@ -15,6 +15,7 @@ game.Rope = Object.extend({
 
         this.color = settings.color;
 
+        var self = this;
         function createControlPoint(endpoint, anchor, p, l) {
             var body = new cp.Body(settings.mass, Infinity);
             body.p.x = p.x;
@@ -26,6 +27,7 @@ game.Rope = Object.extend({
             shape.setFriction(0.5);
             shape.setLayers(c.LAYER_ROPES);
             shape.group = c.GROUP_ROPE;
+            shape.entity = self;
 
             space.addBody(body);
 
@@ -55,6 +57,7 @@ game.Rope = Object.extend({
         space.addConstraint(new cp.SlideJoint(c2, c3, cp.vzero, cp.vzero, 0, seglenth));
 
         this.visible = true;
+        this.name = "rope";
     },
 
     "update" : function update() {
@@ -85,12 +88,12 @@ game.Rope = Object.extend({
 
         context.lineCap = "round";
         context.strokeStyle = "black";
-        context.lineWidth = 5;
+        context.lineWidth = 3;
         context.stroke();
 
         var color = game.darkenColor(this.color, Math.max(game.scene.lightlevel, 0.25));
         context.strokeStyle = game.getColor(color);
-        context.lineWidth = 3;
+        context.lineWidth = 1.5;
         context.stroke();
 
         context.restore();

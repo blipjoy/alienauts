@@ -8,6 +8,7 @@ game.installExitHandler = function installExitHandler() {
             function exit_scene(arbiter, space) {
                 me.game.viewport.fadeIn("#000", 250, function () {
                     me.state.change(arbiter.b.to);
+                    return true;
                 });
             }
         );
@@ -27,6 +28,7 @@ game.Exit = Object.extend({
         this.color = settings.color;
 
         this.visible = true;
+        this.name = "exit";
 
         var space = cm.getSpace();
 

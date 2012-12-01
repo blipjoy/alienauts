@@ -11,12 +11,18 @@ game.PlayScreen = me.ScreenObject.extend({
 
         me.game.viewport.fadeOut("#000", 250, function () {
             // Bind input
-            me.input.registerMouseEvent("mousedown", game.player, game.player.touch.bind(game.player), true);
-            me.input.registerMouseEvent("mousemove", vp, game.player.drag.bind(game.player), true);
-            me.input.registerMouseEvent("mouseup", vp, game.player.touchEnd.bind(game.player), true);
+            me.input.registerMouseEvent("mousemove", vp, function (e) {
+                me.event.publish(c.EVENT_DRAG, [ e ]);
+            }, true);
+
+            me.input.registerMouseEvent("mouseup", vp, function (e) {
+                me.event.publish(c.EVENT_TOUCHEND, [ e ]);
+            }, true);
 
             // Install collision handlers
+            game.installPlayerCollisionHandler();
             game.installExitHandler();
+            game.installAirFlowHandler();
 
             // HUD
             /*
@@ -40,7 +46,6 @@ game.PlayScreen = me.ScreenObject.extend({
         var vp = me.game.viewport;
 
         // Unbind input
-        me.input.releaseMouseEvent("mousedown", game.player);
         me.input.releaseMouseEvent("mousemove", vp);
         me.input.releaseMouseEvent("mouseup", vp);
     },

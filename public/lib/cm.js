@@ -100,6 +100,7 @@ window.cm = (function cm() {
 
     // Remove body and associated shapes.
     function remove(body) {
+        var constraints = [];
         var shapes = [];
 
         // Collect shapes first.
@@ -108,11 +109,21 @@ window.cm = (function cm() {
             shapes.push(shape);
         });
 
+        // Collect constraints.
+        body.eachConstraint(function eachConstraint(constraint) {
+            constraints.push(constraint);
+        });
+
         function removeNow() {
             // Now it is safe to remove all bodies and shapes.
             shapes.forEach(function forEach(shape) {
                 space.removeShape(shape);
             });
+
+            constraints.forEach(function forEach(constraint) {
+                space.removeConstraint(constraint);
+            });
+
             space.removeBody(body);
         }
 

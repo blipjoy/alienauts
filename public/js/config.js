@@ -13,6 +13,7 @@ var c = {
     "LAYER_NONE"        : 0x00000000,
     "LAYER_SHAPES"      : 0x00000001,
     "LAYER_ROPES"       : 0x00000002,
+    "LAYER_AIRFLOW"     : 0x00000004,
 
     // Chipmunk collision groups
     "GROUP_ROPE"        : 1, // Rope control points
@@ -21,6 +22,13 @@ var c = {
     // Chipmunk collision types
     "TYPE_PLAYER"       : 1,
     "TYPE_EXIT"         : 2,
+    "TYPE_AIRFLOW"      : 3,
+    "TYPE_BALLOON"      : 4,
+    "TYPE_SOLID"        : 5, // Solid lines; walls, floors, ceilings, etc.
+
+    // minpubsub events
+    "EVENT_DRAG"        : "game.drag",
+    "EVENT_TOUCHEND"    : "game.touchEnd",
 
     "MOBILE"            : navigator.userAgent.match(/Android|iPhone|iPad|iPod/i),
     "GUID"              : (function () {

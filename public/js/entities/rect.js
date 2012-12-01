@@ -11,5 +11,6 @@ game.Rect = game.Poly.extend({
         ];
 
         this.parent(x, y, verts, cp.vzero, settings);
+        this.name = "rect";
     }
 });

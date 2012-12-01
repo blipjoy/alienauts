@@ -1,6 +1,7 @@
 game.ObservationRoom = Object.extend({
     "init" : function init(settings) {
         this.visible = true;
+        this.name = "observation room";
 
         settings = settings || {};
 

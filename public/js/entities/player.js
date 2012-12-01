@@ -1,4 +1,27 @@
+/* Create a Chipmunk collision handler for exits */
+game.installPlayerCollisionHandler = function installPlayerCollisionHandler() {
+    if (!game.playerCollisionHandlerInstalled) {
+        game.playerCollisionHandlerInstalled = true;
+        cm.getSpace().addCollisionHandler(
+            c.TYPE_PLAYER,
+            c.TYPE_SOLID,
+            null,
+            function enable_beam(arbiter, space) {
+                arbiter.getShapes()[0].entity.beam = true;
+                return true;
+            },
+            null,
+            function disable_beam(arbiter, space) {
+                arbiter.getShapes()[0].entity.beam = false;
+                return true;
+            }
+        );
+    }
+};
+
 game.Player = me.Rect.extend({
+    "anchor" : cp.v(0, 12.5),
+
     "init" : function init(x, y) {
         this.r = 25;
         this.parent(new me.Vector2d(x - this.r, y - this.r), this.r * 2, this.r * 2);
@@ -6,12 +29,13 @@ game.Player = me.Rect.extend({
         var space = cm.getSpace();
 
         this.visible = true;
+        this.name = "player";
 
         this.body = new cp.Body(1, Infinity);
         var shape = space.addShape(new cp.CircleShape(this.body, this.r, cp.vzero));
-        shape.setElasticity(0.3);
+        shape.setElasticity(0);
         shape.setFriction(0.8);
-        shape.setLayers(c.LAYER_SHAPES);
+        shape.setLayers(c.LAYER_SHAPES | c.LAYER_AIRFLOW);
         shape.collision_type = c.TYPE_PLAYER;
         shape.entity = this;
 
@@ -19,8 +43,22 @@ game.Player = me.Rect.extend({
         space.addBody(this.body);
 
         this.touch_pos = false;
+        this.beam = true;
 
         this.ticks = 0;
+
+        // Bind input
+        me.input.registerMouseEvent("mousedown", this, this.touch.bind(this), true);
+        this.subs = [];
+        this.subs.push(me.event.subscribe(c.EVENT_DRAG, this.drag.bind(this)));
+        this.subs.push(me.event.subscribe(c.EVENT_TOUCHEND, this.touchEnd.bind(this)));
+    },
+
+    "destroy" : function destroy() {
+        this.subs.forEach(function (sub) {
+            me.event.unsubscribe(sub);
+        });
+        this.subs = [];
     },
 
     "update" : function update() {
@@ -52,24 +90,25 @@ game.Player = me.Rect.extend({
 
     "drag" : function drag(e) {
         if (this.touch_pos) {
-            var r = this.r,
-                p = this.body.p,
-                touch = me.input.touches[0];
+            this.touch_pos = me.input.touches[0];
 
-            if (touch.x > p.x + r) {
+            var r = this.r,
+                p = this.body.p;
+
+            if (this.touch_pos.x > p.x + r) {
                 this.move(200);
             }
-            else if (touch.x < p.x - r) {
+            else if (this.touch_pos.x < p.x - r) {
                 this.move(-200);
             }
-
-            this.touch_pos = touch;
         }
     },
 
     "touchEnd" : function touchEnd(e) {
-        this.touch_pos = false;
-        this.move(0);
+        if (this.touch_pos) {
+            this.touch_pos = false;
+            this.move(0);
+        }
     },
 
     "move" : function move(velocity) {
@@ -125,25 +164,27 @@ game.Player = me.Rect.extend({
 
         context.translate(p.x, c.HEIGHT - p.y - 13 + stretch);
 
-        // Draw beams
-        context.lineCap = "round";
-        context.lineWidth = 5;
+        if (this.beam) {
+            // Draw beams
+            context.lineCap = "round";
+            context.lineWidth = 5;
 
-        function beam(r) {
-            var a = Math.PI * 0.25;
-            context.beginPath();
-            context.moveTo(Math.cos(a) * r, Math.sin(a) * r);
-            context.arc(0, 0, r, a, Math.PI * 0.75);
-            context.stroke();
+            function beam(r) {
+                var a = Math.PI * 0.25;
+                context.beginPath();
+                context.moveTo(Math.cos(a) * r, Math.sin(a) * r);
+                context.arc(0, 0, r, a, Math.PI * 0.75);
+                context.stroke();
+            }
+
+            var alpha = ((1 / 10) * (ticks % 10)) * 0.333;
+            context.strokeStyle = "rgba(128, 128, 0, " + (1 - alpha) + ")";
+            beam(10 + (ticks % 10));
+            context.strokeStyle = "rgba(128, 128, 0, " + (0.666 - alpha) + ")";
+            beam(20 + (ticks % 10));
+            context.strokeStyle = "rgba(128, 128, 0, " + (0.333 - alpha) + ")";
+            beam(30 + (ticks % 10));
         }
-
-        var alpha = ((1 / 10) * (ticks % 10)) * 0.333;
-        context.strokeStyle = "rgba(128, 128, 0, " + (1 - alpha) + ")";
-        beam(10 + (ticks % 10));
-        context.strokeStyle = "rgba(128, 128, 0, " + (0.666 - alpha) + ")";
-        beam(20 + (ticks % 10));
-        context.strokeStyle = "rgba(128, 128, 0, " + (0.333 - alpha) + ")";
-        beam(30 + (ticks % 10));
 
 
         // Draw saucer body

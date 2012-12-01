@@ -10,14 +10,18 @@ game.Circle = me.Rect.extend({
         ];
         settings.mass = settings.mass || 1;
         settings.group = settings.group || 0;
+        settings.collision_type = settings.collision_type || 0;
         settings.elasticity = settings.elasticity || 0.3;
         settings.friction = settings.friction || 0.5;
+
+        this.settings = settings;
 
         var space = cm.getSpace();
         var r2 = r * 2;
 
         this.parent(new me.Vector2d(x - r, y - r), r2, r2);
         this.visible = true;
+        this.name = "circle";
 
         this.r = r;
         this.color = settings.color;
@@ -26,8 +30,9 @@ game.Circle = me.Rect.extend({
         var shape = space.addShape(new cp.CircleShape(b, r, cp.vzero));
         shape.setElasticity(settings.elasticity);
         shape.setFriction(settings.friction);
-        shape.setLayers(c.LAYER_SHAPES);
+        shape.setLayers(c.LAYER_SHAPES | c.LAYER_AIRFLOW);
         shape.group = settings.group;
+        shape.collision_type = settings.collision_type;
         shape.entity = this;
 
         // FIXME
@@ -44,10 +49,16 @@ game.Circle = me.Rect.extend({
     },
 
     "update" : function update() {
-        var b = this.body;
+        var b = this.body,
+            p = b.p,
+            r = this.r;
+
+        // Sync melonJS Rect with Chipmunk body
+        this.pos.x = p.x - r;
+        this.pos.y = c.HEIGHT - p.y - r;
 
         // Reset the light level
-        this.lightlevel = this.lightsource ? 1 : 0;
+        this.lightlevel = this.name === "lightsource" ? 1 : 0;
 
         return ((b.vx != 0) || (b.vy != 0));
     },

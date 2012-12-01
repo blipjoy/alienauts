@@ -11,13 +11,13 @@ game.Scene01 = game.PlayScreen.extend({
     "onResetEvent" : function onResetEvent() {
         game.scene = this;
 
-        var h = c.HEIGHT * 0.33;
+        var h = c.HEIGHT * 0.333;
 
         // Create a floor.
         var settings = {
             "elasticity" : 1,
             "friction" : 1,
-            "color" : "transparent"
+            "color" : c.DEBUG ? "red" : "transparent"
         };
         me.game.add(new game.Line(
             cp.v(0, h),
@@ -52,14 +52,14 @@ game.Scene01 = game.PlayScreen.extend({
 
 
         // Create player entity.
-        game.player = new game.Player(140, c.HEIGHT * 0.66 - 25);
+        game.player = new game.Player(140, c.HEIGHT * 0.666 - 25);
         me.game.add(game.player, 1001);
 
         // Create the observation window.
         me.game.add(new game.ObservationRoom(), 2000);
 
         // Create a scientist.
-        me.game.add(new game.Scientist((Math.random() * 250) + 100, c.HEIGHT - 90, {
+        me.game.add(new game.Scientist((Math.random() * 200) + 100, c.HEIGHT - 90, {
             "direction" : -1,
             "head" : 1
         }), 2000);

@@ -30,7 +30,7 @@ game.LightSource = game.Circle.extend({
 
         this.parent(x, y, r, settings);
 
-        this.lightsource = true;
+        this.name = "lightsource";
     },
 
     "update" : function update() {
@@ -74,7 +74,7 @@ game.LightSource = game.Circle.extend({
         var bb = new cp.BB(x - intensity, p.y - intensity, x + intensity, p.y + intensity);
         space.bbQuery(bb, c.LAYER_SHAPES, 0, function (shape) {
             // FIXME: Support segments
-            if (shape.entity.lightsource ||
+            if (shape.entity.name === "lightsource" ||
                 shape.type === "segment") {
                 return;
             }

@@ -10,10 +10,13 @@ game.Poly = Object.extend({
         ];
         settings.mass = settings.mass || 1;
         settings.group = settings.group || 0;
+        settings.collision_type = settings.collision_type || 0;
         settings.elasticity = settings.elasticity || 0.3;
         settings.friction = settings.friction || 0.5;
 
         this.visible = true;
+        this.name = "poly";
+
         this.color = settings.color;
 
         var b = this.body = new cp.Body(settings.mass, cp.momentForPoly(settings.mass, verts, center));
@@ -21,8 +24,9 @@ game.Poly = Object.extend({
         var shape = space.addShape(new cp.PolyShape(b, verts, center));
         shape.setElasticity(settings.elasticity);
         shape.setFriction(settings.friction);
-        shape.setLayers(c.LAYER_SHAPES);
+        shape.setLayers(c.LAYER_SHAPES | c.LAYER_AIRFLOW);
         shape.group = settings.group;
+        shape.collision_type = settings.collision_type;
         shape.entity = this;
 
         b.p = cp.v(x, c.HEIGHT - y);

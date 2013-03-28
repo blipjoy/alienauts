@@ -83,7 +83,10 @@ game.Scene01 = game.PlayScreen.extend({
 
 
         // Create the observation window.
-        me.game.add(new game.ObservationRoom(), 2000);
+        // CocoonJS does not properly support reverse winding on paths.
+        if (!navigator.isCocoonJS) {
+            me.game.add(new game.ObservationRoom(), 2000);
+        }
 
         // Create a scientist.
         me.game.add(new game.Scientist((Math.random() * 200) + 100, c.HEIGHT - 90, {

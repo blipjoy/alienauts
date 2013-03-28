@@ -1,6 +1,6 @@
-game.Scene02 = game.Scene01.extend({
+game.Scene03 = game.Scene01.extend({
     // Exit to next scene
-    "exit" : me.state.SCENE03,
+    "exit" : me.state.SCENE00,
 
     // Tutorial object definition
     "tutorial" : {
@@ -66,7 +66,7 @@ game.Scene02 = game.Scene01.extend({
 
         // Create a balloon.
         var balloon = new game.Balloon(
-            c.WIDTH * 0.55,
+            c.WIDTH * 0.4,
             c.HEIGHT - h - 90,
             15,
             {
@@ -76,7 +76,7 @@ game.Scene02 = game.Scene01.extend({
         me.game.add(balloon, 1003);
 
         // Attach balloon with a rope.
-        me.game.add(new game.Rope(balloon.body, space.staticBody, cp.v(0, -20), cp.v(c.WIDTH * 0.55, h), 70, {
+        me.game.add(new game.Rope(balloon.body, space.staticBody, cp.v(0, -20), cp.v(c.WIDTH * 0.4, h), 70, {
             "mass" : 0.2
         }), 1002);
 

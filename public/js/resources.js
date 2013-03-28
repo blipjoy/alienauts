@@ -10,15 +10,22 @@ game.resources = {
         "zap"
     ],
 
-    /* Maps from Tiled. */
+    /* Maps. */
     "map" : [
     ],
 
-    /* 2-channel audio. Usually sound effects. */
+    /* Sound effects. */
     "sfx" : [
+        "blip1",
+        "blip2",
+        "blip3",
+        "blip4",
+        "blip5",
+        "blip6",
+        "blip7"
     ],
 
-    /* 1-channel audio. Usually music. */
+    /* Background music. */
     "bgm" : [
     ]
 };

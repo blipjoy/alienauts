@@ -1,9 +1,13 @@
-game.Tutorial = Object.extend({
+game.Tutorial = me.Renderable.extend({
     "init" : function init(tutorial) {
         this.tutorial = tutorial;
         this.cloud = me.loader.getImage("cloud");
 
-        this.visible = true;
+        this.parent(new me.Vector2d(
+            game.player.pos.x - 25,
+            game.player.pos.y - this.cloud.height - 10
+        ), this.cloud.width, this.cloud.height);
+        this.name = "tutorial";
     },
 
     "update" : function update() {
@@ -12,8 +16,8 @@ game.Tutorial = Object.extend({
     },
 
     "draw" : function draw(context) {
-        var x = game.player.pos.x - 25,
-            y = game.player.pos.y - this.cloud.height - 10;
+        var x = this.pos.x = game.player.pos.x - 25,
+            y = this.pos.y = game.player.pos.y - this.cloud.height - 10;
 
         context.save();
 

@@ -1,4 +1,4 @@
-game.Circle = me.Rect.extend({
+game.Circle = me.Renderable.extend({
     "init" : function init(x, y, r, settings) {
         settings = settings || {};
 
@@ -21,7 +21,6 @@ game.Circle = me.Rect.extend({
         var r2 = r * 2;
 
         this.parent(new me.Vector2d(x - r, y - r), r2, r2);
-        this.visible = true;
         this.name = "circle";
 
         this.r = r;

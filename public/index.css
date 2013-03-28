@@ -1,27 +1,21 @@
 body {
-    margin: 0;
+    background-color: #000;
+    color: #fff;
+
+    /* Allow mouse dragging. */
     -moz-user-select: none;
     -ms-user-select: none;
     -o-user-select: none;
     -webkit-user-select: none;
     user-select: none;
-    background-color: black;
-    min-height: 300px;
+
+    /* Allow canvas to hit the edges of the browser viewport. */
+    margin: 0;
 }
 
-canvas {
-    vertical-align: top;
-}
+#screen canvas {
+    margin: auto;
 
-#screen {
-    position: relative;
-}
-
-#framecounter {
-    position: absolute;
-    right: 0;
-    color: white;
-    font-size: 8pt;
-    font-family: "Courier New";
-    text-shadow: black 1px 1px;
+    /* Hide the gap for font descenders. */
+    display: block;
 }

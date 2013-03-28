@@ -1,11 +1,10 @@
-game.Scientist = Object.extend({
+game.Scientist = me.Renderable.extend({
     "init" : function init(x, y, settings) {
-        this.visible = true;
+        this.parent(new me.Vector2d(x, y), 0, 0); // FIXME
         this.name = "scientist";
 
         settings = settings || {};
 
-        this.pos = new me.Vector2d(x, y);
         this.color = settings.color || "#141414";
         this.direction = settings.direction || 1; // -1 or 1
         this.head = settings.head || 1; // 0 or 1

@@ -1,16 +1,16 @@
-game.ObservationRoom = Object.extend({
+game.ObservationRoom = me.Renderable.extend({
     "init" : function init(settings) {
-        this.visible = true;
+        // Cache border
+        var w = c.WIDTH,
+            h = c.HEIGHT,
+            r = 10; // rounded corner radius
+
+        this.parent(new me.Vector2d(), w, h);
         this.name = "observation room";
 
         settings = settings || {};
 
         this.color = settings.color || "#141414";
-
-        // Cache border
-        var w = c.WIDTH,
-            h = c.HEIGHT,
-            r = 10; // rounded corner radius
 
         this.border = me.video.createCanvasSurface(w, h);
 
@@ -23,8 +23,6 @@ game.ObservationRoom = Object.extend({
         this.border.arcTo(r, r, r, h - r, r);
         this.border.fillStyle = this.color;
         this.border.fill();
-
-        this.ticks = 0;
     },
 
     "update" : function update() {

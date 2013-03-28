@@ -4,11 +4,29 @@ var game = {
     // Run on page load.
     "onload" : function onload() {
         // Initialize the video.
-        if (!me.video.init("screen", c.WIDTH, c.HEIGHT)) {
+        if (!me.video.init("screen", c.WIDTH, c.HEIGHT, c.DOUBLEBUF, "auto", true)) {
             alert("Your browser does not support HTML5 canvas.");
             return;
         }
-        me.video.setImageSmoothing(false);
+
+        // Mobile browser hacks
+        if (c.MOBILE && !navigator.isCocoonJS) {
+            // Prevent the webview from moving on a swipe
+            window.document.addEventListener("touchmove", function (e) {
+                e.preventDefault();
+                window.scroll(0, 0);
+                return false;
+            }, false);
+
+            // Scroll away mobile GUI
+            (function () {
+                window.scrollTo(0, 1);
+            }).defer();
+
+            me.event.subscribe(me.event.WINDOW_ONRESIZE, function (e) {
+                window.scrollTo(0, 1);
+            })
+        }
 
         // Initialize the audio.
         me.audio.init("mp3,ogg");
@@ -22,7 +40,10 @@ var game = {
         this.loadResources();
 
         // Initialize melonJS and display a loading screen.
-        me.state.change(me.state.LOADING);
+        game.LoadBlipjoyLogo(function () {
+            me.state.set(me.state.LOADING, new game.LoadingScreen());
+            me.state.change(me.state.LOADING);
+        });
     },
 
     "loadResources" : function loadResources() {
@@ -53,7 +74,7 @@ var game = {
                 "name"      : value,
                 "type"      : "audio",
                 "src"       : "resources/sfx/",
-                "channel"   : 2
+                "channel"   : 3
             })
         });
 
@@ -76,13 +97,55 @@ var game = {
         // Set the ScreenObjects for game state management.
         me.state.set(me.state.BLIPJOY, new game.BlipjoyScreen(true));
 
+        me.state.MENU = me.state.SCENE01; // FIXME
+
         me.state.set(me.state.SCENE00, new game.Scene00(true));
         me.state.set(me.state.SCENE01, new game.Scene01(true));
         me.state.set(me.state.SCENE02, new game.Scene02(true));
-//        me.state.set(me.state.SCENE03, new game.Scene03(true));
+        me.state.set(me.state.SCENE03, new game.Scene03(true));
 
         // Start the game.
-        me.state.change(me.state.BLIPJOY);
+        me.state.change(c.DEBUG ? me.state.SCENE00 : me.state.BLIPJOY);
+    },
+
+    // Simple image resize function using "nearest neighbor"
+    // Only works for scaling up
+    "resize" : function resize(image, scale) {
+        var iw = image.width,
+            ih = image.height,
+            ipitch = iw * 4,
+            ow = iw * scale,
+            oh = ih * scale,
+            opitch = ow * 4,
+            context = me.video.createCanvasSurface(ow, oh);
+
+        // Get original pixels
+        context.drawImage(image, 0, 0);
+        var ipixels = context.getImageData(0, 0, iw, ih);
+        try {
+            var opixels = context.createImageData(ow, oh);
+        }
+        catch(e) {
+            var opixels = context.getImageData(0, 0, ow, oh);
+        }
+
+        var ix = 0,
+            iy = 0;
+
+        for (var oy = 0; oy < oh; oy++) {
+            iy = Math.floor(oy / scale);
+            for (var x = 0, ox = 0; x < ow; x++, ox += 4) {
+                ix = Math.floor(x / scale) * 4;
+                opixels.data[ox + 0 + oy * opitch] = ipixels.data[ix + 0 + iy * ipitch]; // R
+                opixels.data[ox + 1 + oy * opitch] = ipixels.data[ix + 1 + iy * ipitch]; // G
+                opixels.data[ox + 2 + oy * opitch] = ipixels.data[ix + 2 + iy * ipitch]; // B
+                opixels.data[ox + 3 + oy * opitch] = ipixels.data[ix + 3 + iy * ipitch]; // A
+            }
+        }
+
+        context.putImageData(opixels, 0, 0);
+
+        return context.canvas;
     },
 
     "clone" : function clone(obj, self, touch, anchor) {

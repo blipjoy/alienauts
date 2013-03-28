@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
     <head>
-        <title>Game-off 2012</title>
+        <title>Alienauts</title>
         <link rel="stylesheet" type="text/css" media="screen" href="index.css">
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
         <meta name="apple-mobile-web-app-capable" content="yes">
@@ -9,8 +9,7 @@
     </head>
     <body>
         <div id="screen">
-            <span id="framecounter">(0/0 fps)</span>
-            <script type="text/javascript" src="lib/melonJS-0.9.5.js"></script>
+            <script type="text/javascript" src="lib/melonJS-0.9.7.js"></script>
             <script type="text/javascript" src="lib/cp.js"></script>
             <script type="text/javascript" src="lib/cm.js"></script>
 
@@ -34,6 +33,7 @@
             <script type="text/javascript" src="js/objects/screens/scenes/00-debug.js"></script>
             <script type="text/javascript" src="js/objects/screens/scenes/01-lab.js"></script>
             <script type="text/javascript" src="js/objects/screens/scenes/02-lab.js"></script>
+            <script type="text/javascript" src="js/objects/screens/scenes/03-lab.js"></script>
 
             <script type="text/javascript" src="js/objects/airflow.js"></script>
             <script type="text/javascript" src="js/objects/exit.js"></script>
@@ -47,18 +47,6 @@
                 /* Bootstrap */
                 window.onReady(function onReady() {
                     game.onload();
-
-                    /* Prevents the webview from moving on a swipe */
-                    window.document.addEventListener("touchmove", function (e) {
-                        e.preventDefault();
-                        window.scroll(0, 0);
-                        return false;
-                    }, false);
-
-                    /* Scroll away mobile GUI */
-                    (function () {
-                        window.scrollTo(0, 1);
-                    }).defer();
                 });
             </script>
         </div>

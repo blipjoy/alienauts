@@ -1,5 +1,8 @@
-game.Rope = Object.extend({
+game.Rope = me.Renderable.extend({
     "init" : function init(body1, body2, anchor1, anchor2, length, settings) {
+        this.parent(new me.Vector2d(body1.x, c.HEIGHT - body1.y), 1, 1); // FIXME
+        this.name = "rope";
+
         settings = settings || {};
 
         // Default settings
@@ -55,9 +58,6 @@ game.Rope = Object.extend({
 
         // Both control points are attached via a slide joint.
         space.addConstraint(new cp.SlideJoint(c2, c3, cp.vzero, cp.vzero, 0, seglenth));
-
-        this.visible = true;
-        this.name = "rope";
     },
 
     "update" : function update() {

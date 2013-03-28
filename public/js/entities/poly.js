@@ -1,5 +1,8 @@
-game.Poly = Object.extend({
+game.Poly = me.Renderable.extend({
     "init" : function init(x, y, verts, center, settings) {
+        this.parent(new me.Vector2d(x, y), 1, 1); // FIXME
+        this.name = "poly";
+
         settings = settings || {};
 
         // Default settings
@@ -13,9 +16,6 @@ game.Poly = Object.extend({
         settings.collision_type = settings.collision_type || 0;
         settings.elasticity = settings.elasticity || 0.3;
         settings.friction = settings.friction || 0.5;
-
-        this.visible = true;
-        this.name = "poly";
 
         this.color = settings.color;
 

@@ -15,20 +15,23 @@ game.installExitHandler = function installExitHandler() {
     }
 };
 
-game.Exit = Object.extend({
+game.Exit = me.Renderable.extend({
     "init" : function init(a, b, settings) {
+        this.parent(
+            new me.Vector2d(
+                a.x,
+                c.HEIGHT - Math.max(a.y, b.y)
+            ),
+            c.WIDTH - a.x,
+            Math.abs(a.y - b.y)
+        );
+        this.name = "exit";
+
         settings = settings || {};
         settings.color = settings.color || "#000";
         settings.to = settings.to || me.state.BLIPJOY;
 
-        this.x = a.x;
-        this.y = c.HEIGHT - Math.max(a.y, b.y);
-        this.w = c.WIDTH - this.x;
-        this.h = Math.abs(a.y - b.y);
         this.color = settings.color;
-
-        this.visible = true;
-        this.name = "exit";
 
         var space = cm.getSpace();
 
@@ -48,6 +51,6 @@ game.Exit = Object.extend({
 
     "draw" : function draw(context) {
         context.fillStyle = this.color;
-        context.fillRect(this.x, this.y, this.w, this.h);
+        context.fillRect(this.pos.x, this.pos.y, this.w, this.h);
     }
 });

@@ -18,9 +18,10 @@ game.installAirFlowHandler = function installAirFlowHandler() {
     }
 };
 
-game.AirFlow = me.Rect.extend({
+game.AirFlow = me.Renderable.extend({
     "init" : function init(x, y, w, h, settings) {
         this.parent(new me.Vector2d(x, y), w, h);
+        this.name = "air flow";
 
         settings = settings || {};
 
@@ -43,10 +44,9 @@ game.AirFlow = me.Rect.extend({
         this.color = settings.color;
         this.force = settings.force;
 
-        if (c.DEBUG) {
-            this.visible = true;
+        if (!c.DEBUG) {
+            this.visible = false;
         }
-        this.name = "air flow";
     },
 
     "update" : function update() {

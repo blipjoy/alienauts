@@ -61,11 +61,11 @@ rocks for a little extra weight.  Use the environment to your advantage.
 
 ## Play Online
 
-[On Github](http://blipjoy.github.com/game-off-2012/public/index.html)
+[On Github](http://blipjoy.github.com/alienauts/public/index.html)
 
 ## Develop
 
-  $ git clone https://github.com/Blipjoy/game-off-2012.git
+  $ git clone https://github.com/blipjoy/alienauts.git
 
 Follow me:
 

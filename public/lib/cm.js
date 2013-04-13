@@ -376,7 +376,6 @@ window.cm = (function cm() {
                     // Set shape properties.
                     shapes.forEach(function forEach(shape) {
                         shape.data = entity;
-                        shape.setLayers(c.LAYER_NO_CHEST);
                     });
                 });
             }

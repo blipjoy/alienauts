@@ -58,7 +58,7 @@ var me = me || {};
 		 * @type Boolean
 		 * @memberOf me.sys
 		 */
-		ua : navigator.userAgent.toLowerCase(),
+		ua : navigator.userAgent,
 		/**
 		 * Browser Audio capabilities (read-only) <br>
 		 * @type Boolean
@@ -91,6 +91,14 @@ var me = me || {};
 		 * @memberOf me.sys
 		 */
 		touch : false,
+		
+		/**
+		 * equals to true if a mobile device (read-only) <br>
+		 * (Android | iPhone | iPad | iPod | BlackBerry | Windows Phone)
+		 * @type Boolean
+		 * @memberOf me.sys
+		 */
+		isMobile : false,
 
 
 		// Global settings
@@ -777,6 +785,9 @@ var me = me || {};
 		
 		// detect touch capabilities
 		me.sys.touch = ('createTouch' in document) || ('ontouchstart' in $) || (navigator.isCocoonJS);
+		
+		// detect platform
+		me.sys.isMobile = me.sys.ua.match(/Android|iPhone|iPad|iPod|BlackBerry|Windows Phone/i);
 
 		// init the FPS counter if needed
 		me.timer.init();
@@ -1116,7 +1127,7 @@ var me = me || {};
 		 * @type function
 		 * @name me.game#onLevelLoaded
 		 * @example
-		 * call myFunction() everytime a level is loaded
+		 * // call myFunction() everytime a level is loaded
 		 * me.game.onLevelLoaded = this.myFunction.bind(this);
 		 */
 		 api.onLevelLoaded = null;
@@ -1164,7 +1175,7 @@ var me = me || {};
 				api.init();
 
 			// remove all objects
-			api.removeAll();
+			api.removeAll(true);
 
 			// reset the viewport to zero ?
 			if (api.viewport)
@@ -1342,6 +1353,28 @@ var me = me || {};
 			}
 			return null;
 		};
+		
+		/**
+		 * return the entity corresponding to the property and value<br>
+		 * note : avoid calling this function every frame since
+		 * it parses the whole object list each time
+		 * @name me.game#getEntityByProp
+		 * @public
+		 * @function
+		 * @param {String} prop Property name
+		 * @param {String} value Value of the property
+		 * @return {me.ObjectEntity[]} Array of object entities
+		 */
+		api.getEntityByProp = function(prop, value)
+		{
+			var objList = [];
+			for (var i = gameObjects.length, obj; i--, obj = gameObjects[i];) {
+				if(obj.isEntity && obj[prop] == value) {
+					objList.push(obj);
+				}
+			}
+			return objList;
+		};
 
 		/**
 		 * add a HUD obj to the game manager
@@ -1421,43 +1454,53 @@ var me = me || {};
 		 * @public
 		 * @function
 		 * @param {me.ObjectEntity} obj Object to be removed
-		 * @param {Boolean} force force immediate deletion
+		 * @param {Boolean=false} force Force immediate deletion.<br>
+		 * <strong>WARNING</strong>: Not safe to force asynchronously (e.g. onCollision callbacks)
 		 */
 		api.remove = function(obj, force) {
-			
-			// notify the object it will be destroyed
-			if (obj.destroy) {
-				obj.destroy();
+
+			// Private function to do object removal
+			function removeNow(target) {
+				// notify the object it will be destroyed
+				if (target.destroy) {
+					target.destroy();
+				}
+
+				// remove the object from the object to draw
+				drawManager.remove(target);
+
+				// Remove the object
+				gameObjects.remove(target);
+				me.entityPool.freeInstance(target);
 			}
-			
-			// remove the object from the object to draw
-			drawManager.remove(obj);
-			
-			// remove the object from the object list
-			if (force===true) {
-				// force immediate object deletion
-				gameObjects.remove(obj);
-				me.entityPool.freeInstance(obj);
-			} else {
-				// make it invisible (this is bad...)
-				obj.visible = false;
-				// else wait the end of the current loop
-				/** @private */
-				pendingRemove = (function (obj) {
-					gameObjects.remove(obj);
-					me.entityPool.freeInstance(obj);
-					pendingRemove = null;
-				}).defer(obj);
+
+			if (gameObjects.indexOf(obj) > -1) {
+				// remove the object from the object list
+				if (force===true) {
+					// force immediate object deletion
+					removeNow(obj);
+				} else {
+					// make it invisible (this is bad...)
+					obj.visible = false;
+					// else wait the end of the current loop
+					/** @private */
+					pendingRemove = (function (obj) {
+						removeNow(obj);
+						pendingRemove = null;
+					}).defer(obj);
+				}
 			}
 		};
 
 		/**
-		 * remove all objects
+		 * remove all objects<br>
 		 * @name me.game#removeAll
+		 * @param {Boolean=false} force Force immediate deletion.<br>
+		 * <strong>WARNING</strong>: Not safe to force asynchronously (e.g. onCollision callbacks)
 		 * @public
 		 * @function
 		 */
-		api.removeAll = function() {
+		api.removeAll = function(force) {
 			//cancel any pending tasks
 			if (pendingRemove) {
 				clearTimeout(pendingRemove);
@@ -1475,10 +1518,11 @@ var me = me || {};
 				   continue;
 				}
 				// remove the entity
-				api.remove(gameObjects[i], true);
+				api.remove(gameObjects[i], force);
 			}
 			// make sure it's empty there as well
-			drawManager.flush();
+			if (force === true)
+				drawManager.flush();
 		};
 
 		/**
@@ -1719,72 +1763,87 @@ var me = me || {};
 		 * set the Vector x and y properties to the given values<br>
 		 * @param {Number} x
 		 * @param {Number} y
+		 * @return Reference to this object for method chaining
 		 */
 		set : function(x, y) {
 			this.x = x;
 			this.y = y;
+			return this;
 		},
 
 		/**
 		 * set the Vector x and y properties to 0
+		 * @return Reference to this object for method chaining
 		 */
 		setZero : function() {
-			this.set(0, 0);
+			return this.set(0, 0);
 		},
 
 		/**
 		 * set the Vector x and y properties using the passed vector
 		 * @param {me.Vector2d} v
+		 * @return Reference to this object for method chaining
 		 */
 		setV : function(v) {
 			this.x = v.x;
 			this.y = v.y;
+			return this;
 		},
 
 		/**
 		 * Add the passed vector to this vector
 		 * @param {me.Vector2d} v
+		 * @return Reference to this object for method chaining
 		 */
 		add : function(v) {
 			this.x += v.x;
 			this.y += v.y;
+			return this;
 		},
 
 		/**
 		 * Substract the passed vector to this vector
 		 * @param {me.Vector2d} v
+		 * @return Reference to this object for method chaining
 		 */
 		sub : function(v) {
 			this.x -= v.x;
 			this.y -= v.y;
+			return this;
 		},
 
 		/**
 		 * Multiply this vector values by the passed vector
 		 * @param {me.Vector2d} v
+		 * @return Reference to this object for method chaining
 		 */
 		scale : function(v) {
 			this.x *= v.x;
 			this.y *= v.y;
+			return this;
 		},
 
 		/**
 		 * Divide this vector values by the passed value
 		 * @param {Number} value
+		 * @return Reference to this object for method chaining
 		 */
 		div : function(n) {
 			this.x /= n;
 			this.y /= n;
+			return this;
 		},
 
 		/**
 		 * Update this vector values to absolute values
+		 * @return Reference to this object for method chaining
 		 */
 		abs : function() {
 			if (this.x < 0)
 				this.x = -this.x;
 			if (this.y < 0)
 				this.y = -this.y;
+			return this;
 		},
 
 		/**
@@ -1801,6 +1860,7 @@ var me = me || {};
 		 * Clamp this vector value within the specified value range
 		 * @param {Number} low
 		 * @param {Number} high
+		 * @return Reference to this object for method chaining
 		 */
 		clampSelf : function(low, high) {
 			this.x = this.x.clamp(low, high);
@@ -1811,19 +1871,23 @@ var me = me || {};
 		/**
 		 * Update this vector with the minimum value between this and the passed vector
 		 * @param {me.Vector2d} v
+		 * @return Reference to this object for method chaining
 		 */
 		minV : function(v) {
 			this.x = this.x < v.x ? this.x : v.x;
 			this.y = this.y < v.y ? this.y : v.y;
+			return this;
 		},
 
 		/**
 		 * Update this vector with the maximum value between this and the passed vector
 		 * @param {me.Vector2d} v
+		 * @return Reference to this object for method chaining
 		 */
 		maxV : function(v) {
 			this.x = this.x > v.x ? this.x : v.x;
 			this.y = this.y > v.y ? this.y : v.y;
+			return this;
 		},
 
 		/**
@@ -1836,6 +1900,7 @@ var me = me || {};
 		
 		/**
 		 * Floor this vector values
+		 * @return Reference to this object for method chaining
 		 */
 		floorSelf : function() {
 			this.x = ~~this.x;
@@ -1853,6 +1918,7 @@ var me = me || {};
 		
 		/**
 		 * Ceil this vector values
+		 * @return Reference to this object for method chaining
 		 */
 		ceilSelf : function() {
 			this.x = Math.ceil(this.x);
@@ -1870,6 +1936,7 @@ var me = me || {};
 
 		/**
 		 * Negate this vector values
+		 * @return Reference to this object for method chaining
 		 */
 		negateSelf : function() {
 			this.x = -this.x;
@@ -1880,10 +1947,12 @@ var me = me || {};
 		/**
 		 * Copy the x,y values of the passed vector to this one
 		 * @param {me.Vector2d} v
+		 * @return Reference to this object for method chaining
 		 */
 		copy : function(v) {
 			this.x = v.x;
 			this.y = v.y;
+			return this;
 		},
 		
 		/**
@@ -1959,7 +2028,7 @@ var me = me || {};
 		 * @return {String}
 		 */			
 		 toString : function() {
-			return 'x:' + this.x + 'y:' + this.y;
+			return 'x:' + this.x + ',y:' + this.y;
 		}
 
 	});
@@ -2786,7 +2855,7 @@ var me = me || {};
 		 *	@param {alpha} alpha opacity value between 0 and 1
 		 */
 		setOpacity : function(alpha) {
-			if (alpha) {
+			if (typeof (alpha) === "number") {
 				this.alpha = alpha.clamp(0.0,1.0);
 			}
 		},
@@ -3832,7 +3901,7 @@ var me = me || {};
 		 * @type Boolean
 		 * @name me.ObjectSettings#collidable
 		 */
-		collidable : false
+		collidable : true
 	};
 
 
@@ -3974,7 +4043,7 @@ var me = me || {};
 			}
 
 			if (name) {
-				console.error("Cannot instantiate entity of type '" + name + "': Class not found!");
+				console.error("Cannot instantiate entity of type '" + data + "': Class not found!");
 			}
 			return null;
 		};
@@ -4074,12 +4143,12 @@ var me = me || {};
 
 		/**
 		 * flag to enable collision detection for this object<br>
-		 * default value : false<br>
+		 * default value : true<br>
 		 * @public
 		 * @type Boolean
 		 * @name me.ObjectEntity#collidable
 		 */
-		collidable : false,
+		collidable : true,
 		
 		
 		/**
@@ -4201,7 +4270,7 @@ var me = me || {};
 			 * falling state of the object<br>
 			 * true if the object is falling<br>
 			 * false if the object is standing on something<br>
-			 * (!) READ ONLY property
+			 * @readonly property
 			 * @public
 			 * @type Boolean
 			 * @name me.ObjectEntity#falling
@@ -4210,7 +4279,7 @@ var me = me || {};
 			/**
 			 * jumping state of the object<br>
 			 * equal true if the entity is jumping<br>
-			 * (!) READ ONLY property
+			 * @readonly property
 			 * @public
 			 * @type Boolean
 			 * @name me.ObjectEntity#jumping
@@ -4221,7 +4290,7 @@ var me = me || {};
 			this.slopeY = 0;
 			/**
 			 * equal true if the entity is standing on a slope<br>
-			 * (!) READ ONLY property
+			 * @readonly property
 			 * @public
 			 * @type Boolean
 			 * @name me.ObjectEntity#onslope
@@ -4229,15 +4298,24 @@ var me = me || {};
 			this.onslope = false;
 			/**
 			 * equal true if the entity is on a ladder<br>
-			 * (!) READ ONLY property
+			 * @readonly property
 			 * @public
 			 * @type Boolean
 			 * @name me.ObjectEntity#onladder
 			 */
 			this.onladder = false;
+			/**
+			 * equal true if the entity can go down on a ladder<br>
+			 * @readonly property
+			 * @public
+			 * @type Boolean
+			 * @name me.ObjectEntity#disableTopLadderCollision
+			 */
+			this.disableTopLadderCollision = false;
 
-			// to enable collision detection
-			this.collidable = settings.collidable || false;
+			// to enable collision detection			
+			this.collidable = typeof(settings.collidable) !== "undefined" ?
+				settings.collidable : true;
 			//this.collectable = false;
 
 			this.type = settings.type || 0;
@@ -4407,6 +4485,7 @@ var me = me || {};
 			if (this.onladder) {
 				this.vel.y = (up) ? -this.accel.x * me.timer.tick
 						: this.accel.x * me.timer.tick;
+				this.disableTopLadderCollision = !up;
 				return true;
 			}
 			return false;
@@ -4595,84 +4674,87 @@ var me = me || {};
 		updateMovement : function() {
 
 			this.computeVelocity(this.vel);
+			
+			// Adjust position only on collidable object
+			if (this.collidable) {
+				// check for collision
+				var collision = this.collisionMap.checkCollision(this.collisionBox, this.vel);
 
-			// check for collision
-			var collision = this.collisionMap.checkCollision(this.collisionBox, this.vel);
-
-			// update some flags
-			this.onslope  = collision.yprop.isSlope || collision.xprop.isSlope;
-			// clear the ladder flag
-			this.onladder = false;
+				// update some flags
+				this.onslope  = collision.yprop.isSlope || collision.xprop.isSlope;
+				// clear the ladder flag
+				this.onladder = false;
 
 
 
-			// y collision
-			if (collision.y) {
+				// y collision
+				if (collision.y) {
+					// going down, collision with the floor
+					this.onladder = collision.yprop.isLadder || collision.yprop.isTopLadder;
 
-				// going down, collision with the floor
-				this.onladder = collision.yprop.isLadder;
-
-				if (collision.y > 0) {
-					if (collision.yprop.isSolid	|| (collision.yprop.isPlatform && (this.collisionBox.bottom - 1 <= collision.ytile.pos.y))) {
-						// adjust position to the corresponding tile
-						this.pos.y = ~~this.pos.y;
-						this.vel.y = (this.falling) ?collision.ytile.pos.y - this.collisionBox.bottom: 0 ;
-						this.falling = false;
-					}
-					else if (collision.yprop.isSlope && !this.jumping) {
-						// we stop falling
-						this.checkSlope(collision.ytile, collision.yprop.isLeftSlope);
-						this.falling = false;
-					}
-					else if (collision.yprop.isBreakable) {
-						if  (this.canBreakTile) {
-							// remove the tile
-							me.game.currentLevel.clearTile(collision.ytile.col, collision.ytile.row);
-							if (this.onTileBreak)
-								this.onTileBreak();
-						}
-						else {
+					if (collision.y > 0) {
+						if (collision.yprop.isSolid	|| 
+							(collision.yprop.isPlatform && (this.collisionBox.bottom - 1 <= collision.ytile.pos.y)) ||
+							(collision.yprop.isTopLadder && !this.disableTopLadderCollision)) {
 							// adjust position to the corresponding tile
 							this.pos.y = ~~this.pos.y;
-							this.vel.y = (this.falling) ?collision.ytile.pos.y - this.collisionBox.bottom: 0;
+							this.vel.y = (this.falling) ?collision.ytile.pos.y - this.collisionBox.bottom: 0 ;
 							this.falling = false;
 						}
-					}
-				}
-				// going up, collision with ceiling
-				else if (collision.y < 0) {
-					if (!collision.yprop.isPlatform	&& !collision.yprop.isLadder) {
-						this.falling = true;
-						// cancel the y velocity
-						this.vel.y = 0;
-					}
-				}
-			}
-
-			// x collision
-			if (collision.x) {
-
-				this.onladder = collision.xprop.isLadder ;
-
-				if (collision.xprop.isSlope && !this.jumping) {
-					this.checkSlope(collision.xtile, collision.xprop.isLeftSlope);
-					this.falling = false;
-				} else {
-					// can walk through the platform & ladder
-					if (!collision.xprop.isPlatform && !collision.xprop.isLadder) {
-						if (collision.xprop.isBreakable	&& this.canBreakTile) {
-							// remove the tile
-							me.game.currentLevel.clearTile(collision.xtile.col, collision.xtile.row);
-							if (this.onTileBreak) {
-								this.onTileBreak();
+						else if (collision.yprop.isSlope && !this.jumping) {
+							// we stop falling
+							this.checkSlope(collision.ytile, collision.yprop.isLeftSlope);
+							this.falling = false;
+						}
+						else if (collision.yprop.isBreakable) {
+							if  (this.canBreakTile) {
+								// remove the tile
+								me.game.currentLevel.clearTile(collision.ytile.col, collision.ytile.row);
+								if (this.onTileBreak)
+									this.onTileBreak();
 							}
-						} else {
-							this.vel.x = 0;
+							else {
+								// adjust position to the corresponding tile
+								this.pos.y = ~~this.pos.y;
+								this.vel.y = (this.falling) ?collision.ytile.pos.y - this.collisionBox.bottom: 0;
+								this.falling = false;
+							}
+						}
+					}
+					// going up, collision with ceiling
+					else if (collision.y < 0) {
+						if (!collision.yprop.isPlatform	&& !collision.yprop.isLadder && !collision.yprop.isTopLadder) {
+							this.falling = true;
+							// cancel the y velocity
+							this.vel.y = 0;
+						}
+					}
+				}
+
+				// x collision
+				if (collision.x) {
+
+					this.onladder = collision.xprop.isLadder || collision.yprop.isTopLadder;
+
+					if (collision.xprop.isSlope && !this.jumping) {
+						this.checkSlope(collision.xtile, collision.xprop.isLeftSlope);
+						this.falling = false;
+					} else {
+						// can walk through the platform & ladder
+						if (!collision.xprop.isPlatform && !collision.xprop.isLadder && !collision.xprop.isTopLadder) {
+							if (collision.xprop.isBreakable	&& this.canBreakTile) {
+								// remove the tile
+								me.game.currentLevel.clearTile(collision.xtile.col, collision.xtile.row);
+								if (this.onTileBreak) {
+									this.onTileBreak();
+								}
+							} else {
+								this.vel.x = 0;
+							}
 						}
 					}
 				}
 			}
-
 
 			// update player position
 			this.pos.add(this.vel);
@@ -4836,8 +4918,6 @@ var me = me || {};
 			// call the parent constructor
 			this.parent(x, y, settings);
 
-			// make it collidable
-			this.collidable = true;
 			this.type = me.game.COLLECTABLE_OBJECT;
 
 		}
@@ -4869,8 +4949,6 @@ var me = me || {};
 			this.fade = settings.fade;
 			this.duration = settings.duration;
 			this.fading = false;
-			
-			this.collidable = true;
 			
 			// a temp variable
 			this.gotolevel = settings.to;
@@ -5557,6 +5635,10 @@ var me = me || {};
 		 * @function
 		 * @param {Int} state @see me.state#Constant
 		 * @param {Arguments} [args] extra arguments to be passed to the reset functions
+		 * @example
+		 * // The onResetEvent method on the play screen will receive two args:
+		 * // "level_1" and the number 3
+		 * me.state.change(me.state.PLAY, "level_1", 3);
 		 */
 
 		obj.change = function(state) {
@@ -5630,11 +5712,6 @@ var me = me || {};
 			---*/
 		init : function() {
 			this.parent(true);
-			// melonJS logo
-			this.logo1 = new me.Font('century gothic', 32, 'white', 'middle');
-			this.logo2 = new me.Font('century gothic', 32, '#89b002', 'middle');
-			this.logo2.bold();
-			this.logo1.textBaseline = this.logo2.textBaseline = "alphabetic";
 
 			// flag to know if we need to refresh the display
 			this.invalidate = false;
@@ -5642,15 +5719,21 @@ var me = me || {};
 			// handle for the susbcribe function
 			this.handle = null;
 			
-			// load progress in percent
-			this.loadPercent = 0;
-			
 		},
 
 		// call when the loader is resetted
 		onResetEvent : function() {
+			// melonJS logo
+			this.logo1 = new me.Font('century gothic', 32, 'white', 'middle');
+			this.logo2 = new me.Font('century gothic', 32, '#89b002', 'middle');
+			this.logo2.bold();
+			this.logo1.textBaseline = this.logo2.textBaseline = "alphabetic";
+
 			// setup a callback
 			this.handle = me.event.subscribe(me.event.LOADER_PROGRESS, this.onProgressUpdate.bind(this));
+
+			// load progress in percent
+			this.loadPercent = 0;
 		},
 		
 		// destroy object at end of loading
@@ -5821,7 +5904,7 @@ var me = me || {};
 							case 'xml' : 
 							case 'tmx' : {
 								// ie9 does not fully implement the responseXML
-								if (me.sys.ua.contains('msie') || !xmlhttp.responseXML) {
+								if (me.sys.ua.match(/msie/i) || !xmlhttp.responseXML) {
 									// manually create the XML DOM
 									result = (new DOMParser()).parseFromString(xmlhttp.responseText, 'text/xml');
 								} else {
@@ -6174,6 +6257,10 @@ var me = me || {};
 			// unload all tmx resources
 			for (name in tmxList)
 				obj.unload(name);
+			
+			// unload all atlas resources
+			for (name in atlasList)
+				obj.unload(name);
 
 			// unload all audio resources
 			me.audio.unloadAll();
@@ -6448,7 +6535,7 @@ var me = me || {};
 			context.textAlign = this.textAlign;
 			context.textBaseline = this.textBaseline;
 
-			var strings = text.split("\n");
+			var strings = (""+text).split("\n");
 			var width = 0, height = 0;
 			for (var i = 0; i < strings.length; i++) {
 				width = Math.max(context.measureText(strings[i].trim()).width, width);
@@ -6471,7 +6558,7 @@ var me = me || {};
 			context.textAlign = this.textAlign;
 			context.textBaseline = this.textBaseline;
 			
-			var strings = text.split("\n");
+			var strings = (""+text).split("\n");
 			for (var i = 0; i < strings.length; i++) {
 				// draw the string
 				context.fillText(strings[i].trim(), ~~x, ~~y);
@@ -6583,7 +6670,7 @@ var me = me || {};
 		 */
 		measureText : function(context, text) {
 			
-			var strings = text.split("\n");
+			var strings = (""+text).split("\n");
 			var width = 0, height = 0;
 			for (var i = 0; i < strings.length; i++) {
 				width = Math.max((strings[i].trim().length * this.sSize.x), width);
@@ -7448,7 +7535,12 @@ var me = me || {};
 			audioFormat = audioFormat.split(',');
 			// detect the prefered audio format
 			activeAudioExt = getSupportedAudioFormat(audioFormat);
-			
+
+			// Disable audio on Mobile devices for now. (ARGH!)
+			if (me.sys.isMobile && !navigator.isCocoonJS) {
+				sound_enable = false;
+			}
+
 			// enable/disable sound
 			obj.play = obj.isAudioEnable() ? _play_audio_enable : _play_audio_disable;
 
@@ -7518,8 +7610,7 @@ var me = me || {};
 				return 0;
 
 			// check for specific platform
-			var isMobile = me.sys.ua.match(/Android|iPhone|iPad|iPod/i);
-			if (isMobile && !navigator.isCocoonJS) {
+			if (me.sys.isMobile && !navigator.isCocoonJS) {
 				if (sync_loading) {
 					sync_loader.push([ sound, onload_cb, onerror_cb ]);
 					return;
@@ -7530,7 +7621,7 @@ var me = me || {};
 			var channels = sound.channel || 1;
 			var eventname = "canplaythrough";
 
-			if (sound.stream === true && !isMobile) {
+			if (sound.stream === true && !me.sys.isMobile) {
 				channels = 1;
 				eventname = "canplay";
 			}
@@ -7656,8 +7747,8 @@ var me = me || {};
 		 * @param {Number} volume Float specifying volume (0.0 - 1.0 values accepted).
 		 */
 		obj.setVolume = function(volume) {
-			if (volume) {
-				settings.volume = parseFloat(volume).clamp(0.0,1.0);
+			if (typeof(volume) === "number") {
+				settings.volume = volume.clamp(0.0,1.0);
 			}
 		};
 
@@ -7872,6 +7963,7 @@ var me = me || {};
 			htmlCounter.replaceChild(document.createTextNode("(" + fps + "/"
 					+ me.sys.fps + " fps)"), htmlCounter.firstChild);
 		};
+		
 
 		/*---------------------------------------------
 			
@@ -7997,6 +8089,21 @@ var me = me || {};
 		var game_height_zoom = 0;
 		var auto_scale = false;
 		var maintainAspectRatio = true;
+		
+		/**
+		 * return a vendor specific canvas type
+		 * @private
+		 */
+		function getCanvasType() {
+			// cocoonJS specific canvas extension
+			if (navigator.isCocoonJS) {
+				if (!me.sys.dirtyRegion) {
+					return 'screencanvas';
+				}
+			}
+			return 'canvas';
+		};
+		
 
 		/*---------------------------------------------
 			
@@ -8004,12 +8111,6 @@ var me = me || {};
 				
 			---------------------------------------------*/
 
-		/* ---
-		
-			init the video part
-			
-			
-			---							*/
 		/**
 		 * init the "video" part<p>
 		 * return false if initialization failed (canvas not supported)
@@ -8024,8 +8125,7 @@ var me = me || {};
 		 * @return {Boolean}
 		 * @example
 		 * // init the video with a 480x320 canvas
-		 * if (!me.video.init('jsapp', 480, 320))
-		 * {
+		 * if (!me.video.init('jsapp', 480, 320)) {
 		 *    alert("Sorry but your browser does not support html 5 canvas !");
 		 *    return;
 		 * }
@@ -8061,7 +8161,7 @@ var me = me || {};
 			me.event.subscribe(me.event.WINDOW_ONRESIZE, me.video.onresize.bind(me.video));
 			
 			// create the main canvas
-			canvas = api.createCanvas(game_width_zoom, game_height_zoom);
+			canvas = api.createCanvas(game_width_zoom, game_height_zoom, true);
 
 			// add our canvas
 			if (wrapperid) {
@@ -8083,7 +8183,7 @@ var me = me || {};
 
 			// create the back buffer if we use double buffering
 			if (double_buffering) {
-				backBufferCanvas = api.createCanvas(game_width, game_height);
+				backBufferCanvas = api.createCanvas(game_width, game_height, false);
 				backBufferContext2D = backBufferCanvas.getContext('2d');
 			} else {
 				backBufferCanvas = canvas;
@@ -8154,9 +8254,14 @@ var me = me || {};
 		 * @param {Int} height height
 		 * @return {Canvas}
 		 */
-		api.createCanvas = function(width, height) {
-			var _canvas = document.createElement("canvas");
-
+		api.createCanvas = function(width, height, vendorExt) {
+			if (width === 0 || height === 0)  {
+				throw new Error("melonJS: width or height was zero, Canvas could not be initialized !");
+			}
+			
+			var canvasType = (vendorExt === true) ? getCanvasType() : 'canvas';
+			var _canvas = document.createElement(canvasType);
+			
 			_canvas.width = width || backBufferCanvas.width;
 			_canvas.height = height || backBufferCanvas.height;
 
@@ -8173,11 +8278,12 @@ var me = me || {};
 		 * @return {Context2D}
 		 */
 		api.createCanvasSurface = function(width, height) {
-			return api.createCanvas(width, height).getContext('2d');
+			return api.createCanvas(width, height, false).getContext('2d');
 		};
 
 		/**
 		 * return a reference to the screen canvas <br>
+		 * (will return buffered canvas if double buffering is enabled, or a reference to Screen Canvas) <br>
 		 * use this when checking for display size, event <br>
 		 * or if you need to apply any special "effect" to <br>
 		 * the corresponding context (ie. imageSmoothingEnabled)
@@ -8190,7 +8296,8 @@ var me = me || {};
 		};
 		
 		/**
-		 * return a reference to the screen canvas corresponding 2d Context
+		 * return a reference to the screen canvas corresponding 2d Context<br>
+		 * (will return buffered context if double buffering is enabled, or a reference to the Screen Context)
 		 * @name me.video#getScreenContext
 		 * @function
 		 * @return {Context2D}
@@ -8389,7 +8496,7 @@ var me = me || {};
 		 */
 		api.applyRGBFilter = function(object, effect, option) {
 			//create a output canvas using the given canvas or image size
-			var fcanvas = api.createCanvasSurface(object.width, object.height);
+			var fcanvas = api.createCanvasSurface(object.width, object.height, false);
 			// get the pixels array of the give parameter
 			var imgpix = me.utils.getPixels(object);
 			// pointer to the pixels data
@@ -9345,6 +9452,17 @@ var me = me || {};
 			}
 			return ar;
 		};
+		
+		/**
+		 * decompress zlib/gzip data (NOT IMPLEMENTED)
+		 *
+		 * @param  {Int[]} Array of bytes
+		 * @param  {String} compressed data format ("gzip","zlib")
+		 * @return {Int[]} Array of bytes
+		 */
+		api.decompress = function(data, format) {
+			throw "melonJS: GZIP/ZLIB compressed TMX Tile Map not supported!";
+		};
 
 		/**
 		 * Decode a CSV encoded array into a binary array
@@ -9690,13 +9808,8 @@ var me = me || {};
 
 (function($) {
 	
-	// some custom level constants
-	me.LevelConstants = {
-		//# name of the collision map
-		COLLISION_MAP : "collision",
-		PARALLAX_MAP : "parallax"
-	};
-	
+	// some custom constants
+	me.COLLISION_LAYER             = "collision";
 	// some TMX constants
 	me.TMX_TAG_MAP                 = "map";
 	me.TMX_TAG_NAME                = "name";
@@ -9716,6 +9829,8 @@ var me = me || {};
 	me.TMX_TAG_ID                  = "id";
 	me.TMX_TAG_DATA                = "data";
 	me.TMX_TAG_COMPRESSION         = "compression";
+	me.TMX_TAG_GZIP                = "gzip";
+	me.TMX_TAG_ZLIB                = "zlib";
 	me.TMX_TAG_ENCODING            = "encoding";
 	me.TMX_TAG_ATTR_BASE64         = "base64";
 	me.TMX_TAG_CSV                 = "csv";
@@ -9806,19 +9921,21 @@ var me = me || {};
 			var properties = data[me.TMX_TAG_PROPERTIES];
 			if (properties) {
 				for(var name in properties){
-					var value = properties[name];
-					
-					// if value not defined or boolean
-					if (!value || value.isBoolean()) {
-						value = value ? (value == "true") : true;
-					}
-					// check if numeric
-					else if (value.isNumeric()) {
-						value = Number(value);
-					}
-					// add the new prop to the object prop list
-					obj[name] = value;
-				}
+                    if (properties.hasOwnProperty(name)) {
+                        var value = properties[name];
+
+                        // if value not defined or boolean
+                        if (!value || value.isBoolean()) {
+                            value = value ? (value == "true") : true;
+                        }
+                        // check if numeric
+                        else if (value.isNumeric()) {
+                            value = Number(value);
+                        }
+                        // add the new prop to the object prop list
+                        obj[name] = value;
+                    }
+                }
 			}
 		};
 		
@@ -10156,6 +10273,7 @@ var me = me || {};
 			L_SLOPE : "lslope",
 			R_SLOPE : "rslope",
 			LADDER : "ladder",
+			TOPLADDER : "topladder",
 			BREAKABLE : "breakable"
 		},
 
@@ -10316,6 +10434,7 @@ var me = me || {};
 			prop.isRightSlope = prop.type ? prop.type.toLowerCase() === this.type.R_SLOPE : false;
 			prop.isBreakable = prop.type ? prop.type.toLowerCase() === this.type.BREAKABLE : false;
 			prop.isLadder = prop.type ? prop.type.toLowerCase() === this.type.LADDER : false;
+			prop.isTopLadder = prop.type ? prop.type.toLowerCase() === this.type.TOPLADDER : false;
 			prop.isSlope = prop.isLeftSlope || prop.isRightSlope;
 			
 			// ensure the collidable flag is correct
@@ -10787,7 +10906,7 @@ var me = me || {};
  *
  */
 
-(function($, game) {
+(function(window) {
 	
 	/**
 	 * a generic Color Layer Object
@@ -10810,7 +10929,7 @@ var me = me || {};
 			
 			this.floating = true;
 			
-			this.parent(new me.Vector2d(0, 0), game.viewport.width, game.viewport.height);
+			this.parent(new me.Vector2d(0, 0), me.game.viewport.width, me.game.viewport.height);
 		},
 
 		/**
@@ -10835,7 +10954,7 @@ var me = me || {};
 		 * @param {alpha} alpha opacity value between 0 and 1
 		 */
 		setOpacity : function(alpha) {
-			if (alpha) {
+			if (typeof(alpha) === "number") {
 				this.opacity = alpha.clamp(0.0, 1.0);
 			}
 		},
@@ -10932,12 +11051,16 @@ var me = me || {};
 			// if ratio !=0 scrolling image
 			this.ratio = ratio || 1.0;
 			
+			// a cached reference to the viewport
+			this.viewport = me.game.viewport;
+			
 			// last position of the viewport
-			this.lastpos = game.viewport.pos.clone();
+			this.lastpos = this.viewport.pos.clone();
+			
 			
 			// set layer width & height 
-			width  = width ? Math.min(game.viewport.width, width)   : game.viewport.width;
-			height = height? Math.min(game.viewport.height, height) : game.viewport.height;
+			width  = width ? Math.min(this.viewport.width, width)   : this.viewport.width;
+			height = height? Math.min(this.viewport.height, height) : this.viewport.height;
 			this.parent(new me.Vector2d(0, 0), width, height);
 			
 			// default opacity
@@ -10978,7 +11101,9 @@ var me = me || {};
 					}
 				}
 			});
-
+			
+			// default origin position
+			this.anchorPoint.set(0,0);
 			
 		},
 		
@@ -11007,7 +11132,7 @@ var me = me || {};
 		 * @param {alpha} alpha opacity value between 0 and 1
 		 */
 		setOpacity : function(alpha) {
-			if (alpha) {
+			if (typeof(alpha) === "number") {
 				this.opacity = alpha.clamp(0.0, 1.0);
 			}
 		},
@@ -11024,12 +11149,14 @@ var me = me || {};
 			}
 			else {
 				// reference to the viewport
-				var vpos = game.viewport.pos;
+				var vpos = this.viewport.pos;
 				// parallax / scrolling image
 				if (!this.lastpos.equals(vpos)) {
 					// viewport changed
-					this.pos.x = (this.imagewidth + this.pos.x + ((vpos.x - this.lastpos.x) * this.ratio)) % this.imagewidth;
-					this.pos.y = (this.imageheight + this.pos.y + ((vpos.y - this.lastpos.y) * this.ratio)) % this.imageheight;
+					this.pos.x += ((vpos.x - this.lastpos.x) * this.ratio) % this.imagewidth;
+					this.pos.x = (this.imagewidth + this.pos.x) % this.imagewidth;
+					this.pos.y += ((vpos.y - this.lastpos.y) * this.ratio) % this.imageheight;
+					this.pos.y = (this.imageheight + this.pos.y) % this.imageheight;
 					this.lastpos.setV(vpos);
 					return true;
 				}
@@ -11043,19 +11170,25 @@ var me = me || {};
 		 * @private
 		 */
 		draw : function(context, rect) {
+			// save current context state
+			context.save();
 			
-			// check if transparency
-			if (this.opacity < 1.0) {
-				// set the layer alpha value
-				var _alpha = context.globalAlpha
-				context.globalAlpha = this.opacity;
+			// translate default position using the anchorPoint value
+			if (this.anchorPoint.y !==0 || this.anchorPoint.x !==0) {
+				context.translate (
+					~~(this.anchorPoint.x * (this.viewport.width - this.imagewidth)),
+					~~(this.anchorPoint.y * (this.viewport.height - this.imageheight))
+				)
 			}
+			
+			// set the layer alpha value
+			context.globalAlpha = this.opacity;
 			
 			// if not scrolling ratio define, static image
 			if (this.ratio===0) {
 				// static image
-				sw = Math.min(rect.width, this.imagewidth);
-				sh = Math.min(rect.height, this.imageheight);
+				var sw = Math.min(rect.width, this.imagewidth);
+				var sh = Math.min(rect.height, this.imageheight);
 				
 				context.drawImage(this.image, 
 								  rect.left, rect.top,		//sx, sy
@@ -11102,9 +11235,7 @@ var me = me || {};
 			}
 			
 			// restore context state
-			if (this.opacity < 1.0) {
-				context.globalAlpha = _alpha;
-			}
+			context.restore();
 		}
 	});	
 	
@@ -11226,7 +11357,7 @@ var me = me || {};
 			}
 			
 			// detect if the layer is a collision map
-			this.isCollisionMap = (this.name.toLowerCase().contains(me.LevelConstants.COLLISION_MAP));
+			this.isCollisionMap = (this.name.toLowerCase().contains(me.COLLISION_LAYER));
 			if (this.isCollisionMap && !me.debug.renderCollisionMap) {
 				// force the layer as invisible
 				this.visible = false;
@@ -11267,7 +11398,7 @@ var me = me || {};
 			}
 			
 			// detect if the layer is a collision map
-			this.isCollisionMap = (this.name.toLowerCase().contains(me.LevelConstants.COLLISION_MAP));
+			this.isCollisionMap = (this.name.toLowerCase().contains(me.COLLISION_LAYER));
 			if (this.isCollisionMap && !me.debug.renderCollisionMap) {
 				// force the layer as invisible
 				this.visible = false;
@@ -11400,7 +11531,7 @@ var me = me || {};
 		 * @param {alpha} alpha opacity value between 0 and 1
 		 */
 		setOpacity : function(alpha) {
-			if (alpha) {
+			if (typeof(alpha) === "number") {
 				this.opacity = alpha.clamp(0.0, 1.0);
 				// if pre-rendering is used, update opacity on the hidden canvas context
 				if (this.preRender) {
@@ -11451,17 +11582,15 @@ var me = me || {};
 			
 			// check for y movement
 			// left, y corner
-			if ( pv.y != 0 ) {
-				res.ytile = this.getTile((pv.x < 0) ? ~~obj.left : Math.ceil(obj.right - 1), y);
+			res.ytile = this.getTile((pv.x < 0) ? ~~obj.left : Math.ceil(obj.right - 1), y);
+			if (res.ytile && this.tileset.isTileCollidable(res.ytile.tileId)) {
+				res.y = pv.y || 1;
+				res.yprop = this.tileset.getTileProperties(res.ytile.tileId);
+			} else { // right, y corner
+				res.ytile = this.getTile((pv.x < 0) ? Math.ceil(obj.right - 1) : ~~obj.left, y);
 				if (res.ytile && this.tileset.isTileCollidable(res.ytile.tileId)) {
 					res.y = pv.y || 1;
 					res.yprop = this.tileset.getTileProperties(res.ytile.tileId);
-				} else { // right, y corner
-					res.ytile = this.getTile((pv.x < 0) ? Math.ceil(obj.right - 1) : ~~obj.left, y);
-					if (res.ytile && this.tileset.isTileCollidable(res.ytile.tileId)) {
-						res.y = pv.y || 1;
-						res.yprop = this.tileset.getTileProperties(res.ytile.tileId);
-					}
 				}
 			}
 			// return the collide object
@@ -11483,7 +11612,7 @@ var me = me || {};
 		draw : function(context, rect) {
 			
 			// get a reference to the viewport
-			var vpos = game.viewport.pos;
+			var vpos = me.game.viewport.pos;
 			
 			// use the offscreen canvas
 			if (this.preRender) {
@@ -11518,7 +11647,7 @@ var me = me || {};
 	/*---------------------------------------------------------*/
 	// END END END
 	/*---------------------------------------------------------*/
-})(window, me.game);
+})(window);
 /*
  * MelonJS Game Engine
  * Copyright (C) 2011 - 2013, Olivier BIOT
@@ -11695,7 +11824,7 @@ var me = me || {};
 			};
 
 			// return a fake collision layer if not found
-			if ((name.toLowerCase().contains(me.LevelConstants.COLLISION_MAP)) && (layer == null)) {
+			if ((name.toLowerCase().contains(me.COLLISION_LAYER)) && (layer == null)) {
 				layer = new me.CollisionTiledLayer(
 					me.game.currentLevel.width,
 					me.game.currentLevel.height
@@ -11831,51 +11960,47 @@ var me = me || {};
 			// initialize the layer data array
 			layer.initArray(layer.cols, layer.rows);
 			
-			// check if data is compressed
-			switch (compression) {	 
-				// no compression
-				case null: {
-					// decode data based on encoding type
-					switch (encoding) {
-						// XML encoding
-						case null:
-							var data = data.getElementsByTagName(me.TMX_TAG_TILE);
-							break;
-						// json encoding
-						case 'json':
-							// do nothing as data can be directly reused
-							break;
-						// CSV encoding
-						case me.TMX_TAG_CSV:
-						// Base 64 encoding
-						case me.TMX_TAG_ATTR_BASE64: {
-							// Merge all childNodes[].nodeValue into a single one
-							var nodeValue = '';
-							for ( var i = 0, len = data.childNodes.length; i < len; i++) {
-								nodeValue += data.childNodes[i].nodeValue;
-							}
-							// and then decode them
-							if (encoding == me.TMX_TAG_ATTR_BASE64)
-								var data = me.utils.decodeBase64AsArray(nodeValue, 4);
-							else
-								var data = me.utils.decodeCSV(nodeValue, layer.cols);
-
-							// ensure nodeValue is deallocated
-							nodeValue = null;
-							break;
-						}
-						  
-						default:
-							throw "melonJS: TMX Tile Map " + encoding + " encoding not supported!";
-							break;
+			// decode data based on encoding type
+			switch (encoding) {
+				// XML encoding
+				case null:
+					var data = data.getElementsByTagName(me.TMX_TAG_TILE);
+					break;
+				// json encoding
+				case 'json':
+					// do nothing as data can be directly reused
+					break;
+				// CSV encoding
+				case me.TMX_TAG_CSV:
+				// Base 64 encoding
+				case me.TMX_TAG_ATTR_BASE64: {
+					// Merge all childNodes[].nodeValue into a single one
+					var nodeValue = '';
+					for ( var i = 0, len = data.childNodes.length; i < len; i++) {
+						nodeValue += data.childNodes[i].nodeValue;
 					}
+					// and then decode them
+					if (encoding == me.TMX_TAG_CSV) {
+						// CSV decode
+						var data = me.utils.decodeCSV(nodeValue, layer.cols);
+					} else {
+						// Base 64 decode
+						var data = me.utils.decodeBase64AsArray(nodeValue, 4);
+						// check if data is compressed
+						if (compression !== null) {
+							data = me.utils.decompress(data, compression);
+						}
+					}
+					// ensure nodeValue is deallocated
+					nodeValue = null;
 					break;
 				}
-					
+				  
 				default:
-					throw "melonJS: " + compression+ " compressed TMX Tile Map not supported!";
+					throw "melonJS: TMX Tile Map " + encoding + " encoding not supported!";
 					break;
 			}
+					
 
 			var idx = 0;
 			// set everything
@@ -12101,7 +12226,7 @@ var me = me || {};
 			}
 			
 			// associate a renderer to the layer (if not a collision layer)
-			if (!layer.isCollisionMap) {
+			if (!layer.isCollisionMap || me.debug.renderCollisionMap) {
 				if (!me.game.renderer.canRender(layer)) {
 					layer.setRenderer(me.mapReader.getNewDefaultRenderer(layer));
 				} else {

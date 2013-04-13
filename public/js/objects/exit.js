@@ -7,7 +7,8 @@ game.installExitHandler = function installExitHandler() {
             c.TYPE_EXIT,
             function exit_scene(arbiter, space) {
                 me.game.viewport.fadeIn("#000", 250, function () {
-                    me.state.change(arbiter.b.to);
+                    me.state.change(arbiter.getB().to);
+
                     return true;
                 });
             }
